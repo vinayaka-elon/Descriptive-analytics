@@ -1,0 +1,775 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cleaning, statistics and charts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-cartesian-dist-min@2.35.2/plotly-cartesian.min.js"></script>
+<style>
+:root{
+  --paper:#FFFFFF; --bg:#FBFBFD; --surface:#F5F5F7; --sunk:#EFEFF3; --fill:#F2F2F5;
+  --text:#1D1D1F; --text-2:#5A5A5F; --text-3:#86868B; --line:#D8D8DE; --sep:#E6E6EB;
+  --blue:#0071E3; --blue-bg:#EDF4FD; --green:#1D7F3C; --green-bg:#EAF6EE;
+  --red:#C8102E; --red-bg:#FCEDEF; --amber:#9A5B00; --amber-bg:#FDF3E6;
+  --kw:#A23ABA; --str:#1D7F3C; --num:#B06000; --com:#86868B; --fn:#0055B8;
+  --fs-1:28px; --fs-2:21px; --fs-3:18px; --fs-5:15px; --fs-6:13.5px;
+  --fs-7:12.5px; --fs-8:11px; --fs-code:12.5px;
+  --ui:"Public Sans",-apple-system,BlinkMacSystemFont,sans-serif;
+  --display:"Newsreader",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:13px; --r-sm:8px; --ease:cubic-bezier(.32,.72,0,1);
+  --shadow:0 1px 3px rgba(0,0,0,.05), 0 8px 26px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#1C1C1E; --bg:#000; --surface:#161618; --sunk:#232325; --fill:#252527;
+  --text:#F5F5F7; --text-2:#A1A1A6; --text-3:#7C7C81; --line:#38383A; --sep:#2C2C2E;
+  --blue:#2997FF; --blue-bg:#0D2136; --green:#30D158; --green-bg:#0E2A18;
+  --red:#FF453A; --red-bg:#2E1113; --amber:#FF9F0A; --amber-bg:#2C1E06;
+  --kw:#D58BF0; --str:#5BD67D; --num:#FFB049; --com:#7C7C81; --fn:#6FA3FF;
+  --shadow:0 4px 20px rgba(0,0,0,.5); } }
+:root[data-theme="dark"]{
+  --paper:#1C1C1E; --bg:#000; --surface:#161618; --sunk:#232325; --fill:#252527;
+  --text:#F5F5F7; --text-2:#A1A1A6; --text-3:#7C7C81; --line:#38383A; --sep:#2C2C2E;
+  --blue:#2997FF; --blue-bg:#0D2136; --green:#30D158; --green-bg:#0E2A18;
+  --red:#FF453A; --red-bg:#2E1113; --amber:#FF9F0A; --amber-bg:#2C1E06;
+  --kw:#D58BF0; --str:#5BD67D; --num:#FFB049; --com:#7C7C81; --fn:#6FA3FF;
+  --shadow:0 4px 20px rgba(0,0,0,.5); }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;-webkit-text-size-adjust:100%}
+body{background:var(--bg); color:var(--text); font-family:var(--ui); font-size:var(--fs-5);
+  line-height:1.55; -webkit-font-smoothing:antialiased}
+.app{max-width:940px; margin:0 auto; padding:24px 20px 70px}
+.top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap}
+h1{margin:0; font-family:var(--display); font-size:var(--fs-1); font-weight:600;
+  letter-spacing:-.02em}
+h2{margin:0 0 3px; font-family:var(--display); font-size:var(--fs-2); font-weight:600}
+h3{margin:0 0 9px; font-size:var(--fs-8); font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text-3)}
+p{margin:0}
+.lede{color:var(--text-2); font-size:var(--fs-6); max-width:64ch; margin:4px 0 14px}
+.sub2{color:var(--text-2); font-size:var(--fs-6); max-width:64ch; margin:2px 0 12px}
+button{font-family:inherit; font-size:inherit}
+.ghost{appearance:none; border:1px solid var(--line); background:transparent; color:var(--text-2);
+  border-radius:980px; padding:5px 13px; font-size:var(--fs-7); cursor:pointer}
+.ghost:hover{background:var(--fill); color:var(--text)}
+.tabs{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px}
+.tab{appearance:none; border:1px solid var(--line); background:transparent; color:var(--text-2);
+  border-radius:980px; padding:7px 15px; font-size:var(--fs-7); cursor:pointer}
+.tab.on{background:var(--text); border-color:var(--text); color:var(--bg); font-weight:600}
+.card{background:var(--paper); border:1px solid var(--sep); border-radius:var(--r);
+  box-shadow:var(--shadow); padding:18px 20px; margin-bottom:13px}
+.tag{display:inline-block; font-size:var(--fs-8); font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--blue); background:var(--blue-bg);
+  padding:3px 9px; border-radius:6px}
+.kind{font-size:var(--fs-8); color:var(--text-3); letter-spacing:.05em; text-transform:uppercase;
+  margin-left:8px}
+.stem{font-family:var(--display); font-size:var(--fs-3); font-weight:600; line-height:1.4;
+  margin:11px 0 2px}
+.stem code, .opt code, .why code, .mini code{font-family:var(--mono); font-size:var(--fs-code);
+  background:var(--sunk); padding:1px 5px; border-radius:4px}
+pre.out, pre.code{max-width:100%; margin:11px 0 2px; background:var(--sunk); border-radius:var(--r-sm);
+  padding:12px 14px; font-family:var(--mono); font-size:var(--fs-code); line-height:1.65;
+  overflow-x:auto; white-space:pre}
+pre.code .k{color:var(--kw)} pre.code .s{color:var(--str)} pre.code .n{color:var(--num)}
+pre.code .c{color:var(--com); font-style:italic} pre.code .f{color:var(--fn)}
+pre.code .hl{background:var(--amber-bg); border-radius:3px}
+.opt{display:flex; gap:10px; align-items:flex-start; width:100%; text-align:left;
+  background:var(--paper); border:1px solid var(--sep); border-radius:var(--r-sm);
+  padding:10px 12px; margin-bottom:7px; cursor:pointer; color:var(--text);
+  font-size:var(--fs-6); line-height:1.5}
+.opt:hover:not(:disabled){border-color:var(--line); background:var(--fill)}
+.opt:disabled{cursor:default}
+.opt .ltr{flex:none; width:20px; height:20px; border-radius:50%; background:var(--fill);
+  color:var(--text-2); font-size:var(--fs-8); font-weight:700; display:flex;
+  align-items:center; justify-content:center; margin-top:1px}
+.opt.right{background:var(--green-bg); border-color:var(--green)}
+.opt.right .ltr{background:var(--green); color:#fff}
+.opt.wrong{background:var(--red-bg); border-color:var(--red)}
+.opt.wrong .ltr{background:var(--red); color:#fff}
+.fillrow{display:flex; gap:9px; margin-top:12px; flex-wrap:wrap}
+.fillrow input{flex:1; min-width:170px; padding:10px 12px; border:1px solid var(--line);
+  border-radius:var(--r-sm); background:var(--sunk); color:var(--text);
+  font-family:var(--mono); font-size:var(--fs-code); outline:none}
+.fillrow input:focus{border-color:var(--blue); background:var(--paper)}
+.fillrow input.right{border-color:var(--green); background:var(--green-bg)}
+.fillrow input.wrong{border-color:var(--red); background:var(--red-bg)}
+.why{margin-top:11px; background:var(--fill); border-radius:var(--r-sm); padding:12px 14px;
+  font-size:var(--fs-6); color:var(--text-2); line-height:1.6}
+.why b{color:var(--text)}
+.nav{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px}
+.btn{appearance:none; border:0; background:var(--fill); color:var(--text);
+  border-radius:var(--r-sm); padding:8px 15px; font-size:var(--fs-6); font-weight:600;
+  cursor:pointer}
+.btn.go{background:var(--blue); color:#fff}
+.btn:disabled{opacity:.4; cursor:default}
+.count{font-size:var(--fs-7); color:var(--text-3); font-family:var(--mono); white-space:nowrap}
+.bar{display:flex; align-items:center; gap:14px; margin-bottom:13px}
+.track{flex:1; height:4px; background:var(--sep); border-radius:3px; overflow:hidden}
+.track i{display:block; height:100%; background:var(--green); width:0; transition:width .4s var(--ease)}
+.done{text-align:center; padding:30px 18px}
+.done .score{font-family:var(--display); font-size:46px; font-weight:600; line-height:1}
+.bytopic{margin:20px auto 0; max-width:400px; text-align:left}
+.bytopic div{display:flex; justify-content:space-between; gap:12px; padding:6px 0;
+  border-bottom:1px solid var(--sep); font-size:var(--fs-6)}
+.bytopic b{font-family:var(--mono); font-weight:500}
+/* data quality */
+.dims{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; margin-bottom:14px}
+@media (max-width:820px){ .dims{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:520px){ .dims{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.dim{appearance:none; text-align:left; background:var(--paper); border:1px solid var(--sep);
+  border-radius:var(--r); padding:12px 13px; cursor:pointer; color:var(--text)}
+.dim:hover{border-color:var(--line)}
+.dim.on{border-color:var(--text); box-shadow:0 0 0 1px var(--text) inset}
+.dim .nm{font-family:var(--display); font-size:var(--fs-6); font-weight:600; line-height:1.25}
+.dim .sc{font-family:var(--mono); font-size:var(--fs-3); margin-top:8px; letter-spacing:-.02em}
+.dim .sc small{font-family:var(--ui); font-size:var(--fs-8); color:var(--text-3)}
+.meter{height:3px; background:var(--sep); border-radius:3px; margin-top:6px; overflow:hidden}
+.meter i{display:block; height:100%}
+.failgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:0 22px}
+
+.q{font-family:var(--display); font-size:var(--fs-3); line-height:1.35; margin-bottom:12px}
+.warn{margin-top:13px; background:var(--amber-bg); color:var(--amber); border-radius:var(--r-sm);
+  padding:11px 13px; font-size:var(--fs-6); line-height:1.6}
+.warn b{display:block; margin-bottom:2px}
+.fail{padding:11px 0; border-bottom:1px solid var(--sep)}
+.fail:last-child{border-bottom:0}
+.fail .ft{font-weight:600; font-size:var(--fs-6); margin-bottom:5px}
+.fail .fr{display:grid; grid-template-columns:52px 1fr; gap:7px; font-size:var(--fs-7);
+  color:var(--text-2); line-height:1.6; margin-top:4px}
+.fail .fr span:first-child{color:var(--text-3); text-transform:uppercase; letter-spacing:.05em;
+  font-size:var(--fs-8); padding-top:2px}
+.fail code{font-family:var(--mono); font-size:var(--fs-code); background:var(--sunk);
+  padding:1px 5px; border-radius:4px; overflow-wrap:anywhere}
+.more{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px}
+.mbtn{appearance:none; border:1px solid var(--line); background:transparent; color:var(--text-2);
+  border-radius:980px; padding:6px 13px; font-size:var(--fs-7); cursor:pointer}
+.mbtn:hover{background:var(--fill); color:var(--text)}
+.mbtn.on{background:var(--text); border-color:var(--text); color:var(--bg); font-weight:600}
+.mini{width:100%; border-collapse:collapse; font-size:var(--fs-6); table-layout:fixed}
+.mini th{text-align:left; font-size:var(--fs-7); font-weight:600; color:var(--text-2);
+  padding:7px 10px; border-bottom:1px solid var(--line)}
+.mini td{padding:8px 10px; border-bottom:1px solid var(--sep); vertical-align:top;
+  line-height:1.55; overflow-wrap:anywhere}
+.mini tr:last-child td{border-bottom:0}
+/* visualisation explorer */
+.vz{display:grid; grid-template-columns:250px 1fr; gap:13px; align-items:start}
+@media (max-width:820px){ .vz{grid-template-columns:1fr} }
+.sw{flex:none; width:32px; height:19px; border-radius:980px; background:var(--line);
+  position:relative; transition:background .18s}
+.sw i{position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
+  background:#fff; transition:transform .18s; box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.vopt{display:block; width:100%; text-align:left; background:transparent; border:0;
+  border-radius:var(--r-sm); padding:7px 8px; cursor:pointer; color:var(--text);
+  font-size:var(--fs-6); margin-bottom:1px}
+.vopt:hover{background:var(--fill)}
+.vopt .row{display:flex; gap:9px; align-items:center}
+.vopt.on .sw{background:var(--blue)}
+.vopt.on .sw i{transform:translateX(13px)}
+.vopt .nm{flex:1; font-weight:500}
+.vnote{color:var(--text-3); font-size:var(--fs-8); line-height:1.5; margin:2px 0 0 41px}
+.numrow{display:flex; gap:9px; align-items:center; padding:7px 8px}
+.numrow input[type=range]{flex:1; accent-color:var(--blue)}
+.numrow .v{font-family:var(--mono); font-size:var(--fs-7); color:var(--blue); font-weight:700;
+  min-width:26px; text-align:right}
+.libs{display:flex; gap:4px; background:var(--sunk); padding:3px; border-radius:980px;
+  width:fit-content}
+.lib{appearance:none; border:0; background:transparent; color:var(--text-2);
+  border-radius:980px; padding:5px 14px; font-size:var(--fs-7); cursor:pointer;
+  font-family:var(--mono)}
+.lib.on{background:var(--paper); color:var(--text); font-weight:700;
+  box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.plot{width:100%; height:290px}
+.rowbar{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:10px; flex-wrap:wrap}
+@media (prefers-reduced-motion: reduce){ *{transition-duration:.01ms!important} }
+</style>
+</head>
+<body>
+<script id="data" type="application/json">{"questions": [{"kind": "mc", "topic": "Process and data types", "stem": "Which stage comes immediately **before** analytics methods?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["collecting the data", "processing and cleaning", "framing the question", "making the decision"], "correct": 1, "why": "Question → collection → processing and cleaning → analytics → decision. Analytics runs on cleaned data, never on the export.", "n": 1}, {"kind": "mc", "topic": "Process and data types", "stem": "Domain knowledge appears at which stages?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["collection and cleaning", "cleaning and analytics", "the question and the decision", "analytics and collection"], "correct": 2, "why": "It frames the question and interprets the result. The middle is IT, programming and statistical method.", "n": 2}, {"kind": "mc", "topic": "Process and data types", "stem": "Country classification as high-, medium- and low-income is which scale?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["nominal", "ordinal", "discrete", "continuous"], "correct": 1, "why": "Names **with levels**. The country names alone would be nominal.", "n": 3}, {"kind": "mc", "topic": "Process and data types", "stem": "Which pair is correctly matched?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["population — continuous", "per capita income — discrete", "population — discrete", "country name — ordinal"], "correct": 2, "why": "Counts have no decimals, so population is discrete. Income at $13,213.45 is continuous, and a bare country name is nominal.", "n": 4}, {"kind": "mc", "topic": "Process and data types", "stem": "Which ordering runs from less precise to very precise?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["ordinal, nominal, continuous, discrete", "nominal, ordinal, discrete, continuous", "discrete, continuous, nominal, ordinal", "continuous, discrete, ordinal, nominal"], "correct": 1, "why": "Each step adds something: order, then number, then decimals.", "n": 5}, {"kind": "mc", "topic": "Process and data types", "stem": "Profit for one company in 2015 through 2020 is:", "out": "", "code": false, "src": "Sep 29 slides", "options": ["cross-sectional", "time series", "nominal", "ordinal"], "correct": 1, "why": "One entity, several periods. Six companies measured in 2020 would be cross-sectional.", "n": 6}, {"kind": "mc", "topic": "Process and data types", "stem": "Which is **cross-sectional** data?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["one store's sales each month for a year", "one store's sales in 2019 and 2020", "forty stores' sales in March 2020", "forty stores' sales each month for a year"], "correct": 2, "why": "Many entities, one moment. The last option is both at once — panel data.", "n": 7}, {"kind": "mc", "topic": "Process and data types", "stem": "A Series differs from a DataFrame because a Series:", "out": "", "code": false, "src": "Sep 29 slides", "options": ["carries no index at all", "holds one type of value", "cannot be given a name", "cannot hold text values"], "correct": 1, "why": "One dimension, one type, plus an index. A DataFrame's columns can each be a different type.", "n": 8}, {"kind": "fill", "topic": "Process and data types", "stem": "One word. Data from several entities at the same point in time is called _______-sectional.", "out": "", "code": false, "src": "Sep 29 slides", "answer": "cross", "accept": ["cross"], "why": "Cross-sectional: many entities, one moment. Time series is the other way round.", "n": 9}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "In a right-skewed distribution, which ordering holds?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["mean < median < mode", "mode < median < mean", "median < mode < mean", "mode < mean < median"], "correct": 1, "why": "The long right tail drags the mean furthest; the mode stays at the peak.", "n": 10}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "Mean $592, median $400. The distribution is:", "out": "", "code": false, "src": "Sep 29 slides", "options": ["symmetric", "right-skewed", "left-skewed", "bimodal"], "correct": 1, "why": "Mean above median. Quote the median and say why.", "n": 11}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "Which list is **dispersion** only?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["mean, median, mode, count", "range, variance, standard deviation", "mean, range, mode, median", "median, variance, mode, mean"], "correct": 1, "why": "Central tendency is mean, median, mode. Everything else there answers *how spread out*.", "n": 12}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "Which centre works on country names?", "out": "", "code": false, "src": "Sep 29 slides", "options": ["mean", "median", "mode", "range"], "correct": 2, "why": "You cannot average names or sort them to a middle. The mode is the only one left.", "n": 13}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "Variance is reported in:", "out": "", "code": false, "src": "Sep 29 slides", "options": ["the original units", "units squared", "percentages", "standard deviations"], "correct": 1, "why": "Dollars squared means nothing to anybody, which is why the standard deviation gets reported instead.", "n": 14}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "Two groups share a mean; group B's standard deviation is twice group A's. Group B:", "out": "", "code": false, "src": "Sep 29 slides", "options": ["has larger values", "has more rows", "is more spread out", "is skewed"], "correct": 2, "why": "Same centre, wider curve — the slide's picture.", "n": 15}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "What does this output say about the centre?", "out": "count    240.00\nmean      31.97\nstd       15.58\nmin        6.00\n25%       20.85\n50%       30.00\n75%       39.60\nmax       98.60", "code": false, "src": "class notebook", "options": ["use the mean", "use the median", "use the mode", "the column is unusable"], "correct": 1, "why": "Mean 31.97 above median 30.00, max 98.60 — right-skewed.", "n": 16}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "`count` is 240 here but 228 in the next column. That means:", "out": "", "code": false, "src": "class notebook", "options": ["an error", "12 blanks", "12 duplicates", "two tables"], "correct": 1, "why": "`count` counts non-blank values. It is the first thing `describe()` tells you.", "n": 17}, {"kind": "mc", "topic": "Descriptive statistics", "stem": "What is the median of this column?", "out": "hours\n1.5\n2.7\n4.2\n2.0\n3.0\n2.3", "code": false, "src": "class notebook", "options": ["2.3", "2.5", "3.0", "4.0"], "correct": 1, "why": "Six values sorted: 1.5, 2.0, 2.3, 2.7, 3.0, 4.2. No single middle, so pandas averages 2.3 and 2.7.", "n": 18}, {"kind": "fill", "topic": "Descriptive statistics", "stem": "One word. The middle value once the data is sorted.", "out": "", "code": false, "src": "Sep 29 slides", "answer": "median", "accept": ["median"], "why": "With an even count, pandas averages the two either side.", "n": 19}, {"kind": "fill", "topic": "Descriptive statistics", "stem": "One method. Which pandas call returns count, mean, std, min, quartiles and max at once?", "out": "", "code": true, "src": "class notebook", "answer": "describe", "accept": ["describe", "describe()", "df.describe()"], "why": "`df.describe()` — eight numbers per numeric column.", "n": 20}, {"kind": "mc", "topic": "Data cleaning", "stem": "Interviews and experiments you run are:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["secondary sources", "primary sources", "tertiary sources", "public sources"], "correct": 1, "why": "First-hand, you were involved. Journals and government data are secondary.", "n": 21}, {"kind": "mc", "topic": "Data cleaning", "stem": "Secondary sources need verification because they were:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["collected without any method", "collected for another purpose", "collected before the question existed", "collected by automated systems"], "correct": 1, "why": "Quick and easy, but somebody else chose what to measure and why.", "n": 22}, {"kind": "mc", "topic": "Data cleaning", "stem": "Which is **not** one of the four quality dimensions on the slide?", "out": "", "code": false, "src": "Oct 1 slides", "options": ["accuracy", "completeness", "precision", "usability"], "correct": 2, "why": "Accuracy, completeness, consistency, usability.", "n": 23}, {"kind": "mc", "topic": "Data cleaning", "stem": "Which issue has **three** possible responses?", "out": "", "code": false, "src": "Oct 1 slides", "options": ["duplicates", "outliers", "stale data", "biased information"], "correct": 1, "why": "Exclude, include or investigate — because it may be an error, a real extreme, or a different population.", "n": 24}, {"kind": "mc", "topic": "Data cleaning", "stem": "**Biased information** calls for:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["removing the bad rows", "fixing the worst values", "caution with the results", "getting new data"], "correct": 3, "why": "No repair fixes a bad sample. Compare stale data, where the answer is caution.", "n": 25}, {"kind": "mc", "topic": "Data cleaning", "stem": "**Stale data** calls for:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["removing the old rows", "fixing the dates", "caution with the results", "collecting it again"], "correct": 2, "why": "You often cannot re-collect it, so you report its age and hedge the conclusion.", "n": 26}, {"kind": "mc", "topic": "Data cleaning", "stem": "You have 40 columns; two of them are 90% blank. The slide says:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["drop those rows", "drop those columns", "fill with 0", "fill with the mean"], "correct": 1, "why": "Few columns bad → drop columns. Few rows bad → drop rows.", "n": 27}, {"kind": "mc", "topic": "Data cleaning", "stem": "Between `fillna(0)` and filling with the mean, the slide prefers:", "out": "", "code": false, "src": "Oct 1 slides", "options": ["0", "the mean", "neither", "whichever is faster"], "correct": 1, "why": "Zero invents a value that drags every summary down. The mean at least keeps the centre — though it still shrinks the spread.", "n": 28}, {"kind": "mc", "topic": "Data cleaning", "stem": "`df.dropna(axis=1, how='all')` removes:", "out": "", "code": true, "src": "Oct 1 slides", "options": ["rows that are entirely blank", "columns that are entirely blank", "rows with any blank", "columns with any blank"], "correct": 1, "why": "`axis=1` is columns; `how='all'` needs every value blank.", "n": 29}, {"kind": "mc", "topic": "Data cleaning", "stem": "Which line fills blanks with the column mean?", "out": "", "code": true, "src": "Oct 1 slides", "options": ["df['pop'] = df['pop'].fillna(0)", "df['pop'] = df['pop'].fillna(np.mean(df['pop']))", "df['pop'] = df['pop'].dropna(how='any')", "df['pop'] = df['pop'].interpolate('linear')"], "correct": 1, "why": "Straight off the slide, and preferred over `fillna(0)`.", "n": 30}, {"kind": "fill", "topic": "Data cleaning", "stem": "One method. Which removes repeated rows?", "out": "", "code": true, "src": "Oct 1 slides", "answer": "drop_duplicates", "accept": ["df.drop_duplicates()", "drop_duplicates", "drop_duplicates()"], "why": "`df = df.drop_duplicates()` — keeps the first copy, drops the repeats after it.", "n": 31}, {"kind": "mc", "topic": "Data cleaning", "stem": "`interpolate(method=\"quadratic\")` suits:", "out": "", "code": true, "src": "Oct 1 slides", "options": ["nominal columns", "time series", "duplicated rows", "text columns"], "correct": 1, "why": "It estimates from neighbours, so the rows must be in a meaningful order.", "n": 32}, {"kind": "mc", "topic": "Data cleaning", "stem": "How many kinds of bike are in this column?", "out": "Road      61\nHybrid    37\nE-Bike    19\nroad       1\nROAD       1\nhybrid     1", "code": false, "src": "class notebook", "options": ["3", "4", "6", "cannot tell"], "correct": 0, "why": "Three, written six ways — the slide's **inconsistency**. A group-by would report six rows and raise nothing.", "n": 33}, {"kind": "mc", "topic": "Data cleaning", "stem": "This column reports 0 missing and will not sum. The issue is:", "out": "0    $30.00\n1    $10.00\n2    pending\n3    $42.00\ndtype: object", "code": false, "src": "class notebook", "options": ["missing data", "duplicates", "invalid data", "stale data"], "correct": 2, "why": "`'$30.00'` is text, so `isna()` sees nothing wrong. Invalid data → fix or remove.", "n": 34}, {"kind": "mc", "topic": "Data cleaning", "stem": "`df.duplicated().sum()` returns 1 on a file with two identical rows. Why 1?", "out": "", "code": true, "src": "class notebook", "options": ["a bug", "it counts repeats after the first", "it counts columns", "it ignores the first column"], "correct": 1, "why": "The flag answers *which rows do I remove*. `keep=False` marks both copies for looking at.", "n": 35}, {"kind": "mc", "topic": "Data cleaning", "stem": "What does this tell you?", "out": "rows        : 121\nunique ids  : 120\nduplicated(): 1", "code": false, "src": "class notebook", "options": ["one row went missing", "a row was exported twice", "the id column is wrong", "nothing is wrong here"], "correct": 1, "why": "121 rows for 120 ids, one flagged repeat. Duplicates → remove.", "n": 36}, {"kind": "mc", "topic": "Visualisation", "stem": "Which is **not** one of the three purposes on the slide?", "out": "", "code": false, "src": "Visualizations slides", "options": ["record", "analyze", "communicate", "validate"], "correct": 3, "why": "Record, analyze, communicate. Validation is part of cleaning.", "n": 37}, {"kind": "mc", "topic": "Visualisation", "stem": "*Discover errors and find patterns* belongs under:", "out": "", "code": false, "src": "Visualizations slides", "options": ["record", "analyze", "communicate", "all three"], "correct": 1, "why": "Analysis is the chart you make for yourself; communication is the one you send.", "n": 38}, {"kind": "mc", "topic": "Visualisation", "stem": "A dashboard is:", "out": "", "code": false, "src": "Visualizations slides", "options": ["author-driven", "reader-driven", "always printed", "a single chart"], "correct": 1, "why": "The reader explores it. A data story is author-driven — static and directed.", "n": 39}, {"kind": "mc", "topic": "Visualisation", "stem": "A data story is:", "out": "", "code": false, "src": "Visualizations slides", "options": ["interactive", "reader-driven", "author-driven", "a set of filters"], "correct": 2, "why": "It takes the reader somewhere, rather than letting them wander.", "n": 40}, {"kind": "mc", "topic": "Visualisation", "stem": "A **chart** is distinguished by:", "out": "", "code": false, "src": "Visualizations slides", "options": ["being interactive", "focusing on a few variables", "being static and printed", "carrying a written narrative"], "correct": 1, "why": "Dashboards widen it; stories add the narrative.", "n": 41}, {"kind": "mc", "topic": "Visualisation", "stem": "Anscombe's quartet shows four datasets that share:", "out": "", "code": false, "src": "Visualizations slides", "options": ["their shapes", "their summary statistics", "their sample size only", "nothing"], "correct": 1, "why": "Same N, mean and SD; four completely different pictures. The argument for plotting.", "n": 42}, {"kind": "mc", "topic": "Visualisation", "stem": "Comparison **among items** leads to:", "out": "", "code": false, "src": "Visualizations slides", "options": ["a line or multi-line chart", "a bar or column chart", "a histogram or box plot", "a tree map or pie chart"], "correct": 1, "why": "Over time takes the line branch instead.", "n": 43}, {"kind": "mc", "topic": "Visualisation", "stem": "Distribution of a **single** variable leads to:", "out": "", "code": false, "src": "Visualizations slides", "options": ["a scatter or bubble chart", "a histogram or box plot", "a pie chart or tree map", "a ribbon or area chart"], "correct": 1, "why": "Two variables under distribution takes you to a scatter plot.", "n": 44}, {"kind": "mc", "topic": "Visualisation", "stem": "Ribbon charts and area charts sit under:", "out": "", "code": false, "src": "Visualizations slides", "options": ["comparison over time", "composition over time", "distribution", "relationship"], "correct": 1, "why": "They show what a total is made of as it changes.", "n": 45}, {"kind": "mc", "topic": "Visualisation", "stem": "Tree map and packed bubble chart sit under:", "out": "", "code": false, "src": "Visualizations slides", "options": ["composition, static", "composition, over time", "comparison", "distribution"], "correct": 0, "why": "Alongside the pie chart. Over time is ribbon and area.", "n": 46}, {"kind": "mc", "topic": "Visualisation", "stem": "Relationship between two variables leads to:", "out": "", "code": false, "src": "Visualizations slides", "options": ["a bar or column chart", "a histogram or box plot", "a scatter or bubble chart", "a ribbon or area chart"], "correct": 2, "why": "Bubble is a scatter with size as a third variable.", "n": 47}, {"kind": "fill", "topic": "Visualisation", "stem": "One word. Comparison, distribution, relationship and _______.", "out": "", "code": false, "src": "Visualizations slides", "answer": "composition", "accept": ["composition"], "why": "The four branches. Name the question first; the chart follows.", "n": 48}, {"kind": "mc", "topic": "Visualisation", "stem": "Which line draws a histogram with 20 bins?", "out": "", "code": true, "src": "class notebook", "options": ["ax.bar(col, bins=20)", "ax.hist(col, bins=20)", "ax.plot(col, bins=20)", "ax.box(col, bins=20)"], "correct": 1, "why": "`hist` bins and counts for you; `bar` wants the heights already computed.", "n": 49}, {"kind": "mc", "topic": "Visualisation", "stem": "Which line puts months back in calendar order?", "out": "", "code": true, "src": "class notebook", "options": ["monthly.sort_values()", "monthly.sort_index()", "monthly.reindex(order)", "monthly.head(6)"], "correct": 2, "why": "`reindex` takes the order you name. Sorting re-applies the alphabetical one.", "n": 50}, {"kind": "mc", "topic": "Visualisation", "stem": "What is wrong with this, as input to a line chart?", "out": "Apr  1274.60\nAug  1253.70\nJul  1540.60\nJun  1323.20\nMay  1092.50\nSep  1188.90", "code": false, "src": "class notebook", "options": ["a month is missing", "the order is alphabetical", "the values are wrong", "nothing is wrong"], "correct": 1, "why": "Apr, Aug, Jul, Jun, May, Sep. Plot it and the trend is meaningless while looking normal.", "n": 51}], "dq": {"DIMS": [{"id": "completeness", "name": "Completeness", "one": "is anything missing", "q": "Of the values this table should hold, how many are actually there?", "what": "The share of cells that hold a value. Cheap to compute and the first thing anyone asks — but the number on its own is the least interesting part. <b>Who</b> is missing decides whether you can drop them.", "code": "# per column, and across the table\ndf.isna().sum()\ndf.isna().mean().round(3)\n\n1 - df.isna().sum().sum() / df.size          # one score for the table\n\n# the question that matters: are the blanks random?\ndf.groupby(df[\"father_ed\"].isna())[\"esteem\"].mean()", "blind": "A high score says nothing about whether the gaps are random. If the people with a blank differ from the people without one, every row you drop changes who your answer is about — and completeness cannot see that.", "fails": [["Blank cells", "df.isna().sum()", "Decide per column and say which you chose: drop the rows, fill with a value you can defend, or add a flag column and keep everyone. <code>df[\"edu_missing\"] = df[\"edu\"].isna()</code>"], ["Blanks written as words", "col.unique() shows \"n/a\", \"-\", \"missing\"", "Name them at read time: <code>pd.read_csv(path, na_values=[\"n/a\", \"-\", \"missing\"])</code>. Until you do they are ordinary text, and one text value turns the whole column into text."], ["dropna() with no subset", "the row count falls off a cliff", "<code>df.dropna(subset=[\"the_one_column\"])</code>. A bare <code>dropna()</code> removes any row with a gap anywhere, and takes most of a wide survey with it."], ["Blanks that were filled upstream", "a suspicious pile of zeros or 1900-01-01", "Count them: <code>(df[\"col\"] == 0).sum()</code>. A zero you believe and a zero that means “don't know” are different numbers with the same face."], ["A rule that never fires", "a flag is False for everyone", "Blanks fail every comparison, so <code>NaN < 20</code> is False. Handle missing first, then compare, and report three outcomes: yes, no, and unknown."]]}, {"id": "uniqueness", "name": "Uniqueness", "one": "is anything counted twice", "q": "Does each real-world thing appear exactly once?", "what": "The share of rows that are not repeats, and whether the column you treat as a key really identifies a row. Duplicates never make a number too small, so nothing looks wrong until someone checks a total against the source.", "code": "df.duplicated().sum()                        # exact copies\ndf.drop(columns=[\"id\"]).duplicated().sum()   # copies, ignoring the row id\n\ndf[\"customer_id\"].is_unique                  # is the key a key\ndf[\"customer_id\"].duplicated().sum()\n\nlen(raw) - len(df)                           # what a repair cost you", "blind": "Two rows that look identical may be two real events — the same customer buying the same thing twice on the same day. Uniqueness can find the pairs; only you can say which of them is a mistake.", "fails": [["Exact duplicate rows", "df.duplicated().sum()", "<code>df.drop_duplicates(subset=[c for c in df.columns if c != \"id\"])</code> — the id makes every row unique, so a bare check finds nothing."], ["The same person twice under different ids", "the email or the name repeats", "<code>df.drop_duplicates(subset=[\"email\"], keep=\"last\")</code>, but only once you know which copy is the real one."], ["A key that is not a key", "df[\"id\"].is_unique is False", "Find out why it repeats before dropping anything. Two purchases by one customer are not a duplicated row, and summing per key keeps both."], ["A merge that multiplied rows", "the row count went up", "<code>df.merge(lookup, on=\"key\", how=\"left\", validate=\"many_to_one\")</code> raises the moment the right-hand key is not unique."], ["An export that ran twice", "every total is exactly double", "Check <code>len()</code> against what the source system reports, every single time."]]}, {"id": "validity", "name": "Validity & accuracy", "one": "right shape, and true", "q": "Does every value obey the rules of its column — and does it match the thing in the world?", "what": "Two questions that get confused, and only one of them can be answered from the file. <b>Validity</b> is shape: the type, the format, the range a column claims, all of which a rule can check. <b>Accuracy</b> is truth, and nothing inside a dataset can establish it. A value can pass every rule you write and still be wrong.", "code": "# validity — the rules come from the column, so a computer can check them\ndf.dtypes\ndf.describe()\n\nassert df[\"amount\"].notna().all()\nassert (df[\"amount\"] > 0).all()\nassert df[\"beds\"].between(1, 30).all()\nassert df[\"type\"].isin([\"Single Family\", \"Multi Family\"]).all()\n\n# accuracy — the rules come from the world, so they cost shoe leather\nmerged = df.merge(source_of_truth, on=\"record\", suffixes=(\"\", \"_true\"))\n(merged[\"amount\"] != merged[\"amount_true\"]).sum()     # against a second source\n\ndf.sample(30, random_state=0)                          # or check by hand\ndf.loc[df[\"record\"] == 5759, \"baths\"] = 4              # then fix by key, never by position", "blind": "The score beside this card is validity only, and that is the whole lesson: $215,000 is a perfectly valid number for a house that actually sold for $251,000. Every dimension on this page can be computed in a second and none of them touches accuracy — a table can score 100% on all of them and still describe the wrong month.", "fails": [["A date stored as a number", "dtypes says int64 on a date column", "<code>pd.to_datetime(col, unit=\"D\", origin=\"1899-12-30\")</code>. Excel counts days from 30 December 1899; without <code>origin</code> every date lands in 1970 and nothing errors.", "rule"], ["A date stored as text", "dates sorting alphabetically", "<code>pd.to_datetime(col, format=\"mixed\", errors=\"coerce\")</code> — then count the NaTs it created. A coerce that quietly eats half the column is worse than an error.", "rule"], ["Money or counts as text", "sum() glues the strings together", "Strip <code>$</code> and <code>,</code> first, then <code>pd.to_numeric(..., errors=\"coerce\")</code>.", "rule"], ["An id read as a number", "00042 became 42", "<code>pd.read_csv(path, dtype={\"store_id\": str})</code>. An id is a label, not a quantity — nothing you would add up belongs in it.", "rule"], ["Impossible values", "describe() shows 43 bathrooms, an age of 999", "Flag and investigate before you repair. Impossible is not the same as unusual, and the arithmetic cannot tell an error from a real extreme.", "rule"], ["Numbers and text in one column", "dtypes says object on a numeric field", "<code>df[\"col\"].apply(type).value_counts()</code>. Something was typed into a numeric field, and one column holds one kind of thing.", "rule"], ["A value that is merely wrong", "nothing — it passes every rule", "A second source, or a sample checked by hand. There is no test for this inside the file, which is why the score above cannot see it.", "person"], ["A correction applied by position", "the fix moves when the table is sorted", "<code>df.loc[df[\"id\"] == 5759, \"baths\"] = 4</code> — address the row by its key, never by <code>df.loc[2]</code>.", "person"], ["A blanket rule dressed as a fix", "np.where(col > 10, 4, col)", "That rewrites every large value, including the ones that were right. Repair only the rows you have actually checked.", "person"], ["Cleaning that nobody can reconstruct", "the spreadsheet was edited", "Never edit the raw file. Read it, <code>.copy()</code> it, change the copy in code, and count what you lost: <code>len(raw) - len(df)</code>.", "person"]]}, {"id": "consistency", "name": "Consistency", "one": "does it agree with itself", "q": "Is one thing always written the same way, here and everywhere else?", "what": "The share of values in their canonical form. “Ames”, “ames ” and “ AMES” are one town to a reader and three categories to a group-by, so every count built on them is wrong without a single error.", "code": "df[\"town\"].value_counts()                   # look before you fix\n\ndf[\"town\"] = df[\"town\"].str.strip().str.title()\ndf[\"state\"] = df[\"state\"].replace({\"N.Y.\": \"NY\", \"new york\": \"NY\"})\n\n# and the names of the columns themselves\ndf.columns = df.columns.str.strip().str.lower().str.replace(\" \", \"_\")", "blind": "No string method knows that “new york” means NY. That is domain knowledge, and it belongs in an explicit mapping somebody can read and disagree with — not in a clever regular expression.", "fails": [["Case and stray spaces", "value_counts() shows the same label twice", "<code>col.str.strip().str.title()</code>. Either repair alone leaves the other, so do both and look at the counts again."], ["Different spellings of one thing", "N.Y., new york, NY", "An explicit <code>col.replace({...})</code> mapping. Slicing the first two letters would turn Colorado and Connecticut into the same state."], ["Units nobody documented", "two columns of plausible numbers that disagree", "Find the definition before you combine them. Square feet and square metres both look like numbers."], ["Column names you cannot type", "KeyError on a name you are sure about", "<code>list(df.columns)</code> — the TechSales file really does spell it <code>Certficates</code>. Rename once, at the top."], ["Categories that drift over time", "a new label appears halfway down the file", "<code>assert df[\"type\"].isin(EXPECTED).all()</code> so next quarter's export stops the notebook instead of adding a category."]]}, {"id": "timeliness", "name": "Timeliness", "one": "is it current enough", "measurable": "date", "q": "Is the data recent enough for the decision being made with it?", "what": "How old the data is against how old it is allowed to be. There is no universal threshold — a week-old price is stale for trading and fresh for an annual report, so the number only means something once somebody names the tolerance.", "code": "df[\"sale_date\"].max()                       # how fresh is the newest row\n(pd.Timestamp.today() - df[\"sale_date\"].max()).days\n\ndf[\"sale_date\"].min(), df[\"sale_date\"].max()   # what period does it cover\ndf[\"sale_date\"].dt.to_period(\"M\").value_counts().sort_index()   # gaps in the middle\n\nassert df[\"sale_date\"].between(\"2016-01-01\", \"2016-12-31\").all()", "blind": "A dataset can be delivered today and describe last year. Freshness of the file and freshness of the facts inside it are different things, and only the second one matters.", "fails": [["The export is older than anyone thinks", "the newest row is months old", "Check <code>df[\"date\"].max()</code> before anything else, and put the period in the title of every table you produce."], ["A gap in the middle", "a month with no rows", "<code>df[\"date\"].dt.to_period(\"M\").value_counts().sort_index()</code> — a missing month is invisible in a total and obvious in a count."], ["A period that does not match the claim", "“last year” covers fourteen months", "<code>assert df[\"date\"].between(start, end).all()</code>, with the dates from the brief."], ["Late-arriving rows", "last month's total changed since you reported it", "Record when you pulled the data, and say so next to the number."]]}], "WHOLES": [["The row count does not match what you were promised", "A partial export ruins more analyses than any statistical mistake, and it never announces itself.", "len(df)   # against what the source system says"], ["A totals row at the bottom", "Spreadsheets grow these. Left in, it doubles every total and lands in every mean — and it looks like an ordinary row from the top of the file.", "df.tail()\ndf = df.iloc[:-1]"], ["A join that changed the row count", "Fewer rows means it silently dropped data; more means it duplicated it. Both are wrong and neither raises an error.", "len(df)          # before\nlen(merged)      # after — say why they differ"], ["Two levels of detail in one table", "One row per order and one row per order line look the same until you sum the order total and get it once per line.", "df.groupby(\"order_id\").size().value_counts()"], ["A title, a blank line, or notes above the header", "The first row of the file is not always the header, and pandas will happily use a title as one.", "pd.read_csv(path, skiprows=3)\npd.read_excel(path, usecols=\"B:F\")"], ["Columns that are all blank, or never vary", "A field the export was asked for and could not fill, or a filter somebody applied upstream without saying so.", "df.nunique()\ndf.isna().all()"]], "STEPS": [["Look before you touch", "shape, head, tail, dtypes, info, describe, value_counts. Thirty seconds."], ["Write down what you expect", "the row count, the types, the range, the categories. Now you have something to be wrong about."], ["Measure, do not guess", "count the blanks, the duplicates, the values that fail each rule. Numbers, not impressions."], ["Repair one thing at a time", "and check the row count after each. A repair that changes <code>len(df)</code> without you meaning it is a bug."], ["Turn the expectations into asserts", "so next quarter's export stops the notebook instead of producing a plausible wrong number."], ["Write down what you did", "which rows you dropped, which blanks you filled, and why. That paragraph belongs under the table."]], "FLOWS": {"completeness": {"title": "So there are blanks. Now what?", "lede": "Rows, columns, both, fill, or flag — five different answers, and which one is right depends on four questions asked in this order. Work down. Most columns stop before the end.", "start": "A column has blank cells", "steps": [{"q": "1 · Is the blank a value in disguise?", "note": "Before anything else, look at what is actually in the column: <code>df[\"col\"].unique()</code>. A form that wrote “n/a”, a database that wrote <code>NULL</code> as text, an export that wrote 0 or 1900-01-01 — none of these are blank yet, and none of them will be counted by <code>isna()</code>.", "br": [{"c": "yes — words or sentinels", "k": "care", "d": "Turn them into real blanks first", "p": "Everything below this point is wrong until you do. A single text value also drags the whole column to <code>object</code>, so no arithmetic works either.", "code": "pd.read_csv(path, na_values=[\"n/a\", \"-\", \"missing\", \"NULL\"])\n\n# already loaded:\ndf[\"col\"] = pd.to_numeric(df[\"col\"], errors=\"coerce\")"}, {"c": "no — they are genuinely empty", "k": "go", "d": "Carry on to question 2", "p": "<code>df.isna().sum()</code> is now telling you the truth."}]}, {"q": "2 · How much of the column is missing?", "note": "<code>df.isna().mean().sort_values(ascending=False)</code> — the share per column, worst first. This is the only question where the number alone decides.", "br": [{"c": "almost all of it — say 70%+", "k": "stop", "d": "Drop the column", "p": "There is nothing to analyse and nothing honest to fill it with. Say in your notes that you dropped it and why — a reader will wonder where it went.", "code": "df = df.drop(columns=[\"col\"])"}, {"c": "a real share — 5% to 70%", "k": "care", "d": "Keep the column. Go to question 3", "p": "This is the interesting case and the rest of this path is about it."}, {"c": "a handful — under ~5%", "k": "go", "d": "Still go to question 3", "p": "Small does not mean ignorable. Five per cent missing <i>from one kind of person</i> is worse than thirty per cent missing at random."}]}, {"q": "3 · Are the blanks random, or are they about something?", "note": "The question that actually matters, and the one people skip. Group by the blank and compare: <code>df.groupby(df[\"father_ed\"].isna())[\"esteem\"].mean()</code>. If the two groups differ, the gap is carrying information.", "br": [{"c": "the two groups differ", "k": "stop", "d": "Do not drop the rows, and do not fill with the mean", "p": "Dropping changes <i>who your answer is about</i>; filling with the mean pretends the missing group is average when you have just shown it is not. <b>Add a flag column and keep everyone</b> — then the gap becomes a finding rather than a nuisance.", "code": "df[\"edu_missing\"] = df[\"father_ed\"].isna()\ndf.groupby(\"edu_missing\")[\"esteem\"].agg([\"count\", \"mean\"])"}, {"c": "they look the same", "k": "go", "d": "You may drop or fill. Go to question 4", "p": "“Look the same” is a judgement, not a test. Say in your notes what you compared."}]}, {"q": "4 · Does the next step need a complete table?", "note": "Most of the time it does not. <code>mean()</code>, <code>sum()</code>, <code>groupby()</code> and <code>corr()</code> all skip blanks on their own — they just quietly use a smaller n, which is why you report the count beside every statistic.", "br": [{"c": "no — just describing it", "k": "go", "d": "Leave the blanks alone", "p": "Do nothing, and report <code>count</code> next to every number so the reader can see how much evidence is behind it.", "code": "df[\"col\"].describe()      # count is the first line for a reason"}, {"c": "yes — a model, a join, an export", "k": "care", "d": "Now, and only now, drop or impute", "p": "Drop the rows <b>for that column only</b>, or fill — and whichever you choose, count what it cost and keep a flag.", "code": "before = len(df)\ndf = df.dropna(subset=[\"col\"])    # never a bare dropna()\nprint(before - len(df), \"rows dropped\")"}]}], "end": "<b>And whatever you chose, write it under the table.</b> “Rows missing a salary were excluded (412 of 12,686, 3.2%); they were younger on average than the rows kept.” That sentence is the difference between reporting and misleading — and it is the part a reader cannot reconstruct from your output.", "matrix": {"head": ["What you do", "When it is right", "What it costs you", "The line"], "rows": [["Do nothing", "You are describing the data, and every statistic can skip blanks on its own.", "Different columns end up with different n, so the reader has to be told.", "<code>df[\"col\"].mean()</code>"], ["Drop rows", "The column is essential to the question, and the blanks look random.", "Every other column of those rows goes too. A bare <code>dropna()</code> can take a quarter of a wide survey.", "<code>df.dropna(subset=[\"col\"])</code>"], ["Drop the column", "Almost all of it is missing, or nothing depends on it.", "The variable is gone from every later analysis, including ones you have not thought of yet.", "<code>df.drop(columns=[\"col\"])</code>"], ["Both", "A handful of unusable columns, then a handful of unusable rows — in that order.", "Do the columns first, or you will drop rows to save a column you were going to delete anyway.", "<code>df.drop(columns=dead).dropna(subset=key)</code>"], ["Impute", "Something downstream needs a complete matrix and the blanks look random.", "You invented data. The mean stays put and <b>the standard deviation falls</b>, so every spread and every confidence interval is now too narrow.", "<code>df[\"col\"].fillna(df[\"col\"].median())</code>"], ["Flag and keep", "The blanks are not random — or you are not sure.", "Nothing, which is why it is the safe default. You gain a column and lose no rows.", "<code>df[\"col_missing\"] = df[\"col\"].isna()</code>"]]}, "imputes": {"head": ["If you must fill", "Use it when", "What it does to the data"], "rows": [["Median", "A skewed numeric column — the usual choice.", "Safest single value, but every filled row is now identical and the spread shrinks."], ["Mean", "A roughly symmetric numeric column.", "Keeps the mean exactly, shrinks the SD hardest of all. Never report the SD afterwards without saying you filled."], ["Mode", "A category, or a discrete count.", "Makes the most common answer more common, so any share you quote is overstated."], ["A group's median", "The column varies by an obvious group — town, department, year.", "Better than one global value, and honest about the structure you already believe in."], ["Forward fill", "A time series where the last known value still holds.", "<code>df[\"col\"].ffill()</code> — wrong the moment a gap is long, and it invents a flat line."], ["A constant you name", "“Not applicable” really is the answer — 0 siblings, 0 previous claims.", "Fine, and the only case where filling adds information rather than removing it. Say which constant and why."]]}}, "uniqueness": {"title": "Two rows look the same. Which is it?", "lede": "A repeat is not automatically a duplicate. Three different things produce identical-looking rows, and each wants a different repair.", "start": "A row, or a key, appears more than once", "steps": [{"q": "1 · Did you check with the id column in or out?", "note": "A row id makes every row unique, so <code>df.duplicated()</code> finds nothing and the file looks clean. This is the most common false all-clear in the whole topic.", "br": [{"c": "with the id in", "k": "stop", "d": "Check again without it", "p": "Otherwise you are asking whether two rows have different id numbers, which they always do.", "code": "df.drop(columns=[\"record\"]).duplicated().sum()"}, {"c": "without it", "k": "go", "d": "Go to question 2", "p": ""}]}, {"q": "2 · Is every column identical, or only the key?", "note": "<code>df[df.duplicated(subset=[\"customer_id\"], keep=False)].sort_values(\"customer_id\")</code>  — look at the pairs before you touch anything.", "br": [{"c": "every column matches", "k": "care", "d": "Probably one event recorded twice", "p": "An export that ran twice, or a form submitted twice. Drop the copies, then check the row count against what the source system says.", "code": "before = len(df)\ndf = df.drop_duplicates(subset=[c for c in df.columns if c != \"record\"])\nprint(before - len(df), \"removed\")"}, {"c": "the key matches, the rest differs", "k": "stop", "d": "Two real events, one key", "p": "Two purchases by one customer. Dropping either one destroys money. Aggregate to one row per key, or accept that the key is not unique and stop treating it as one.", "code": "df.groupby(\"customer_id\", as_index=False).agg(\n    email=(\"email\", \"first\"), spend=(\"spend\", \"sum\"))"}, {"c": "same person, different keys", "k": "care", "d": "A merge problem, not a duplicate row", "p": "One customer with two ids. Pick the field that really identifies them and decide which copy wins — usually the most recent.", "code": "df.drop_duplicates(subset=[\"email\"], keep=\"last\")"}]}, {"q": "3 · Did the duplication arrive with a join?", "note": "If the row count went <i>up</i> after a merge, nothing in the source was duplicated — your lookup table has a repeated key.", "br": [{"c": "the count rose after a merge", "k": "stop", "d": "Fix the lookup, not the data", "p": "Deduplicate the right-hand table, and let pandas refuse the merge in future.", "code": "lookup[\"key\"].duplicated().sum()\ndf.merge(lookup, on=\"key\", how=\"left\", validate=\"many_to_one\")"}, {"c": "no, it came in the file", "k": "go", "d": "Then question 2 was the answer", "p": ""}]}], "end": "<b>Count both sides, every time.</b> <code>len(raw)</code> before and <code>len(df)</code> after, with the difference printed. A deduplication that removes more than you expected is telling you something about the export that you would rather know now."}, "validity": {"title": "A value fails its rule. Repair, remove, or investigate?", "lede": "The order matters: understand it, then repair it, and only ever delete what you can explain.", "start": "A value is the wrong type, format or range", "steps": [{"q": "1 · Is it the type that is wrong, or the value?", "note": "<code>df.dtypes</code> first. A whole column arriving as text is a reading problem and has a clean fix; a single impossible number is a data problem and does not.", "br": [{"c": "the whole column", "k": "go", "d": "Convert it, and count the casualties", "p": "Strip the symbols, then coerce — and immediately check how many values became blank. That count is the real finding.", "code": "clean = pd.to_numeric(df[\"amount\"].str.replace(\"$\", \"\", regex=False)\n                       .str.replace(\",\", \"\", regex=False), errors=\"coerce\")\nprint(clean.isna().sum() - df[\"amount\"].isna().sum(), \"values lost\")"}, {"c": "a few values", "k": "care", "d": "Go to question 2", "p": ""}]}, {"q": "2 · Is it impossible, or merely unusual?", "note": "Impossible you can rule out from knowledge alone — a negative age, a 13th month. Unusual you cannot: 43 bathrooms might be a typo, an apartment block, or the most important row in the file.", "br": [{"c": "impossible", "k": "care", "d": "Set it to blank, then treat it as missing", "p": "It is not a number you can use and it is not a number you can trust. Turning it into a blank puts it back on the completeness path above, where there is already a decision procedure for it.", "code": "df.loc[df[\"age\"] > 120, \"age\"] = np.nan"}, {"c": "unusual", "k": "stop", "d": "Flag it. Do not touch it yet", "p": "Deleting before you understand is how a genuine apartment block disappears from the analysis — and how a fraud case does.", "code": "q1, q3 = df[\"baths\"].quantile([.25, .75])\niqr = q3 - q1\ndf[\"baths_flag\"] = ~df[\"baths\"].between(q1 - 1.5*iqr, q3 + 1.5*iqr)"}]}, {"q": "3 · Have you actually checked the row?", "note": "This is the line between validity and accuracy, and it is where the tools stop.", "br": [{"c": "yes — you looked at the source", "k": "go", "d": "Correct that one row, by its key", "p": "Never by position and never by value: position moves when anything is sorted, and matching on 43 would also rewrite a house that really has 43.", "code": "df.loc[df[\"record\"] == 5759, \"baths\"] = 4"}, {"c": "no", "k": "stop", "d": "Leave it, and report it", "p": "Run the analysis with and without it. If the answer does not change, say so and move on. If it does, you have just found the thing worth investigating.", "code": "with_it = df[\"baths\"].mean()\nwithout = df[~df[\"baths_flag\"]][\"baths\"].mean()"}]}], "end": "<b>Then write the rule down as an assert.</b> Whatever you just learned about what this column is allowed to contain, put it at the top of the notebook — <code>assert df[\"age\"].between(0, 120).all()</code> — so next quarter's export stops here instead of producing a plausible wrong number."}}, "CATALOGUE": [["Where the mess comes from", [["A transaction system", "dates as serial numbers, the same record exported twice, units nobody documented", "check <code>dtypes</code> and duplicates first"], ["A survey or form", "skipped questions, free text where a category was wanted, one person answering twice", "count blanks per column, then ask who is missing"], ["A spreadsheet someone maintains", "merged cells, a title above the headers, a totals row at the bottom, colour used to mean something", "<code>skiprows=</code>, <code>usecols=</code>, and look at <code>tail()</code>"], ["A database export", "codes instead of names, NULL spelled twelve ways, flags as 0/1 with no key", "<code>na_values=[...]</code> at read time"], ["A web page or API", "nested structures, fields that appear only sometimes", "<code>json_normalize</code>, then check for columns of all-blank"]]], ["The first five minutes", [["How big is it", "<code>df.shape</code>", "does the row count match what you were promised"], ["What is in it", "<code>df.head()</code> · <code>df.tail()</code>", "the bottom is where totals rows and footers hide"], ["What type is each column", "<code>df.dtypes</code> · <code>df.info()</code>", "a date as int64, a number as object"], ["Where the blanks are", "<code>df.isna().sum()</code>", "columns with fewer non-nulls than rows"], ["What the numbers look like", "<code>df.describe()</code>", "impossible minimums and maximums"], ["What the categories really are", "<code>df[\"col\"].value_counts()</code>", "five spellings of one town"]]], ["The repairs, one at a time", [["Messy column names", "<code>df.columns</code>", "<code>df.columns = df.columns.str.strip().str.lower().str.replace(\" \", \"_\")</code>"], ["A name spelled wrong in the source", "you type it right and get <code>KeyError</code>", "<code>df.rename(columns={\"Certficates\": \"certificates\"})</code>"], ["Exact duplicate rows", "<code>df.drop(columns=[\"id\"]).duplicated().sum()</code>", "<code>df.drop_duplicates(subset=[c for c in df.columns if c != \"id\"])</code>"], ["The same person twice", "<code>df[\"email\"].duplicated().sum()</code>", "<code>df.drop_duplicates(subset=[\"email\"], keep=\"last\")</code> — once you know why"], ["Is the key a key", "<code>df[\"id\"].is_unique</code>", "if not, find out why before dropping anything"], ["A date stored as a number", "<code>dtypes</code> says int64", "<code>pd.to_datetime(col, unit=\"D\", origin=\"1899-12-30\")</code>"], ["A date stored as text", "dates sorting alphabetically", "<code>pd.to_datetime(col, format=\"mixed\", errors=\"coerce\")</code>"], ["Money or counts as text", "<code>dtypes</code> says object", "strip <code>$</code> and <code>,</code>, then <code>pd.to_numeric(..., errors=\"coerce\")</code>"], ["An id that must keep leading zeros", "00042 became 42", "<code>pd.read_csv(path, dtype={\"store_id\": str})</code>"], ["Case and stray spaces", "<code>value_counts()</code>", "<code>col.str.strip().str.title()</code>"], ["Different spellings of one thing", "<code>value_counts()</code>", "<code>col.replace({\"N.Y.\": \"NY\", \"new york\": \"NY\"})</code> — a mapping you can show someone"], ["Blanks written as words", "<code>col.unique()</code>", "<code>pd.read_csv(path, na_values=[\"n/a\", \"-\", \"missing\"])</code>"], ["Blanks", "<code>df.isna().sum()</code>", "decide per column: drop, fill, or flag — and say which"], ["Impossible values", "<code>describe()</code>, or a rule you know", "flag and investigate; repair only what you understand"], ["One wrong value you have checked", "you went and looked", "<code>df.loc[df[\"id\"] == 5759, \"baths\"] = 4</code>"], ["Count what you lost", "always", "<code>len(raw) - len(df)</code>"]]], ["The quiet failures", [["Every date lands in 1970", "converted a serial number without <code>origin</code>", "<code>unit=\"D\", origin=\"1899-12-30\"</code>"], ["<code>duplicated()</code> finds nothing", "the id column makes every row unique", "drop the id before checking"], ["Most of the file vanished", "<code>dropna()</code> with no <code>subset</code>", "drop per column, or flag instead"], ["A rule never fires", "the comparison met a blank, and blanks fail every test", "handle missing first, then compare"], ["A total is too big", "a merge duplicated rows, or an export ran twice", "<code>len()</code> before and after, every time"], ["The column is all blank after a coerce", "every value failed to parse", "count the NaNs the coerce created"]]], ["Checks that fail loudly", [["The key is unique", "<code>assert df[\"id\"].is_unique</code>", "put it straight after cleaning"], ["Nothing essential is blank", "<code>assert df[\"amount\"].notna().all()</code>", ""], ["Amounts are positive", "<code>assert (df[\"amount\"] > 0).all()</code>", ""], ["Values are in range", "<code>assert df[\"beds\"].between(1, 30).all()</code>", ""], ["Categories are the expected ones", "<code>assert df[\"type\"].isin([...]).all()</code>", ""], ["Nothing was lost by accident", "<code>assert len(df) == len(raw) - 13</code>", "the number is the decision you made"]]]]}, "viz": {"setup": "import pandas as pd\nrentals = pd.read_excel(\"riverbend_season.xlsx\", sheet_name=\"Rentals\")", "order": ["bar", "pie", "hist", "box", "line", "multiline", "scatter"], "libs": [{"id": "mpl", "name": "matplotlib"}, {"id": "sns", "name": "seaborn"}, {"id": "plotly", "name": "plotly"}], "charts": {"bar": {"name": "Bar chart", "blurb": "A number per category. The chart people read most accurately — length is the value.", "options": [{"id": "sort", "label": "Sort by value", "kind": "bool", "default": true, "note": "Alphabetical order is almost never the order the reader wants."}, {"id": "horiz", "label": "Horizontal bars", "kind": "bool", "default": true, "note": "Use horizontal whenever the labels are words — no tilted text."}, {"id": "labels", "label": "Value labels on bars", "kind": "bool", "default": false, "note": "Saves the reader squinting at the axis. Skip it past about ten bars."}, {"id": "one", "label": "Grey, one highlighted", "kind": "bool", "default": false, "note": "Colour is for the bar you want looked at; the rest can be grey."}, {"id": "title", "label": "Title and axis label", "kind": "bool", "default": true, "note": "The title should state the finding, not name the chart."}, {"id": "grid", "label": "Gridlines", "kind": "bool", "default": false, "note": "Faint rules let values be read off. Put them behind the bars."}], "data": {"labels": ["East", "North", "South"], "values": [1792.6, 2520.3, 3360.6], "alpha_labels": ["East", "North", "South"], "alpha_values": [1792.6, 2520.3, 3360.6]}, "derive": {"_col": {"opts": ["one"], "map": {"1": ", color=colours"}, "default": ""}, "_xy": {"opts": ["horiz"], "map": {"1": "y=\"station\", x=\"amount\""}, "default": "x=\"station\", y=\"amount\""}, "_order": {"opts": ["sort"], "map": {"1": "order=order, "}, "default": ""}, "_pal": {"opts": ["one"], "map": {"1": "hue=\"station\", legend=False, palette=[\"#C9CFDA\", \"#C9CFDA\", \"#C8102E\"], "}, "default": ""}, "_pxy": {"opts": ["horiz"], "map": {"1": "x=\"amount\", y=\"station\""}, "default": "x=\"station\", y=\"amount\""}, "_porient": {"opts": ["horiz"], "map": {"1": ", orientation=\"h\""}, "default": ""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"South brings in the most revenue\""}, "default": ""}, "_ptext": {"opts": ["labels"], "map": {"1": ", text=\"amount\""}, "default": ""}, "_pcol": {"opts": ["one"], "map": {"1": ", color=\"station\", color_discrete_sequence=[\"#C9CFDA\", \"#C9CFDA\", \"#C8102E\"]"}, "default": ""}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", ""]}, {"lines": ["by_station = rentals.groupby(\"station\")[\"amount\"].sum()"], "ifNot": "sort"}, {"lines": ["by_station = rentals.groupby(\"station\")[\"amount\"].sum().sort_values()"], "if": "sort"}, {"lines": ["", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["colours = [\"#C9CFDA\"] * len(by_station)", "colours[-1] = \"#C8102E\""], "if": "one"}, {"lines": ["bars = ax.barh(by_station.index, by_station.values{{_col}})"], "if": "horiz"}, {"lines": ["bars = ax.bar(by_station.index, by_station.values{{_col}})"], "ifNot": "horiz"}, {"lines": ["ax.bar_label(bars, fmt=\"%.0f\", padding=3)"], "if": "labels"}, {"lines": ["ax.set_title(\"South brings in the most revenue\")", "ax.set_xlabel(\"revenue ($)\")"], "if": "title"}, {"lines": ["ax.grid(axis=\"x\", alpha=.3)", "ax.set_axisbelow(True)"], "if": "grid"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", ""]}, {"lines": ["order = rentals.groupby(\"station\")[\"amount\"].sum().sort_values().index"], "if": "sort"}, {"lines": ["", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["sns.barplot(data=rentals, {{_xy}}, estimator=\"sum\", errorbar=None,", "            {{_order}}{{_pal}}ax=ax)"]}, {"lines": ["for c in ax.containers:", "    ax.bar_label(c, fmt=\"%.0f\", padding=3)"], "if": "labels"}, {"lines": ["ax.set_title(\"South brings in the most revenue\")", "ax.set_xlabel(\"revenue ($)\")"], "if": "title"}, {"lines": ["ax.grid(axis=\"x\", alpha=.3)", "ax.set_axisbelow(True)"], "if": "grid"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", ""]}, {"lines": ["by_station = rentals.groupby(\"station\", as_index=False)[\"amount\"].sum()"]}, {"lines": ["by_station = by_station.sort_values(\"amount\")"], "if": "sort"}, {"lines": [""]}, {"lines": ["fig = px.bar(by_station, {{_pxy}}{{_porient}}{{_ptitle}}{{_ptext}}{{_pcol}})"]}, {"lines": ["fig.update_traces(texttemplate=\"%{text:.0f}\", textposition=\"outside\")"], "if": "labels"}, {"lines": ["fig.update_layout(xaxis_title=\"revenue ($)\")"], "if": "title"}, {"lines": ["fig.update_xaxes(showgrid=True)"], "if": "grid"}, {"lines": ["fig.update_xaxes(showgrid=False)"], "ifNot": "grid"}, {"lines": ["fig.show()"]}]}}, "pie": {"name": "Pie chart", "blurb": "Parts of one whole, at one moment. Three slices is the limit — people compare angles badly.", "options": [{"id": "pct", "label": "Show percentages", "kind": "bool", "default": true, "note": "An admission that the angles were not readable on their own."}, {"id": "donut", "label": "Donut (hole in the middle)", "kind": "bool", "default": false, "note": "Cosmetic. It does make room for a total in the centre."}, {"id": "pull", "label": "Pull one slice out", "kind": "bool", "default": false, "note": "Emphasis — use it for the one slice the chart is about."}, {"id": "start", "label": "Start at 12 o'clock", "kind": "bool", "default": true, "note": "Readers expect the first slice to begin at the top."}, {"id": "legend", "label": "Legend instead of labels", "kind": "bool", "default": false, "note": "Labels on the slices are easier; a legend makes the eye travel."}, {"id": "title", "label": "Title", "kind": "bool", "default": true, "note": "Say the finding."}], "data": {"labels": ["E-Bike", "Hybrid", "Road"], "values": [2126.7, 2554.0, 2992.8]}, "derive": {"_labels": {"opts": ["legend"], "map": {"1": ""}, "default": " labels=shares.index,"}, "_pct": {"opts": ["pct"], "map": {"1": " autopct=\"%1.1f%%\","}, "default": ""}, "_start": {"opts": ["start"], "map": {"1": " startangle=90,"}, "default": ""}, "_hole": {"opts": ["donut"], "map": {"1": " wedgeprops={'width': 0.45},"}, "default": ""}, "_explode": {"opts": ["pull"], "map": {"1": " explode=[0, 0, 0.08]"}, "default": ""}, "_phole": {"opts": ["donut"], "map": {"1": ", hole=0.45"}, "default": ""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"Road bikes bring in the largest share\""}, "default": ""}, "_pinfo": {"opts": ["pct", "legend"], "map": {"1,0": "label+percent", "1,1": "percent", "0,1": "none"}, "default": "label"}, "_ppull": {"opts": ["pull"], "map": {"1": ", pull=[0, 0, 0.08]"}, "default": ""}, "_pstart": {"opts": ["start"], "map": {"1": ", rotation=0"}, "default": ", rotation=90"}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", ""]}, {"lines": ["shares = rentals.groupby(\"bike_type\")[\"amount\"].sum()", "", "fig, ax = plt.subplots(figsize=(4.4, 4.4))"]}, {"lines": ["ax.pie(shares.values,{{_labels}}{{_pct}}{{_start}}{{_hole}}{{_explode}})"]}, {"lines": ["ax.legend(shares.index, loc=\"center left\", bbox_to_anchor=(1, .5))"], "if": "legend"}, {"lines": ["ax.set_title(\"Road bikes bring in the largest share\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["# seaborn has no pie chart — by design.", "#", "# Its author argues a sorted bar does the job better, so for a pie you", "# drop to matplotlib underneath (seaborn is built on it anyway).", "", "import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"whitegrid\")", "", "shares = rentals.groupby(\"bike_type\")[\"amount\"].sum()", "", "fig, ax = plt.subplots(figsize=(4.4, 4.4))"]}, {"lines": ["ax.pie(shares.values, colors=sns.color_palette(\"deep\", len(shares)),", "      {{_labels}}{{_pct}}{{_start}}{{_hole}}{{_explode}})"]}, {"lines": ["ax.legend(shares.index, loc=\"center left\", bbox_to_anchor=(1, .5))"], "if": "legend"}, {"lines": ["ax.set_title(\"Road bikes bring in the largest share\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", ""]}, {"lines": ["shares = rentals.groupby(\"bike_type\", as_index=False)[\"amount\"].sum()", ""]}, {"lines": ["fig = px.pie(shares, names=\"bike_type\", values=\"amount\"{{_phole}}{{_ptitle}})"]}, {"lines": ["fig.update_traces(textinfo=\"{{_pinfo}}\"{{_ppull}}{{_pstart}})"]}, {"lines": ["fig.update_layout(showlegend={{legend}})"]}, {"lines": ["fig.show()"]}]}}, "hist": {"name": "Histogram", "blurb": "One numeric column, binned. The only chart that shows the shape of a distribution.", "options": [{"id": "bins", "label": "Bins", "kind": "number", "default": 20, "note": "The one choice that changes the picture. Too few hides the shape, too many is noise.", "min": 4, "max": 60, "step": 1}, {"id": "edge", "label": "White edges on the bars", "kind": "bool", "default": true, "note": "Separates neighbouring bars so you can count them."}, {"id": "mean", "label": "Mark the mean", "kind": "bool", "default": false, "note": "A vertical line showing where the average falls in the shape."}, {"id": "dens", "label": "Density instead of counts", "kind": "bool", "default": false, "note": "The y-axis becomes a proportion — use it to compare groups of different sizes."}, {"id": "cum", "label": "Cumulative", "kind": "bool", "default": false, "note": "Each bar adds the ones before it. Answers “how many below X?”"}, {"id": "title", "label": "Title and axis labels", "kind": "bool", "default": true, "note": "Amount in what? Count of what?"}], "data": {"values": [43.2, 98.6, 34.0, 48.0, 22.0, 42.5, 26.0, 12.0, 33.6, 22.8, 39.1, 17.0, 42.5, 13.0, 57.8, 18.7, 18.0, 19.2, 27.2, 32.4, 38.0, 40.0, 30.0, 33.6, 41.0, 17.0, 44.0, 37.2, 33.6, 45.0, 34.8, 52.8, 19.2, 23.8, 13.6, 56.1, 24.0, 57.8, 36.0, 10.0, 42.0, 20.4, 20.0, 18.0, 26.4, 30.6, 38.4, 18.0, 35.7, 21.0, 46.8, 19.0, 41.0, 43.2, 26.4, 49.0, 33.0, 40.8, 37.2, 34.8, 51.6, 69.7, 12.0, 45.9, 25.5, 32.0, 28.0, 56.1, 39.0, 16.0, 25.2, 43.2, 25.5, 44.2, 28.9, 16.0, 32.0, 27.6, 32.0, 24.0, 20.4, 37.4, 23.8, 24.0, 28.8, 38.4, 16.8, 28.9, 15.6, 17.0, 52.7, 21.6, 8.4, 28.9, 59.5, 51.6, 27.2, 32.4, 21.6, 22.8, 11.9, 31.0, 28.0, 61.2, 23.0, 23.8, 44.4, 32.0, 45.0, 16.8, 52.8, 25.0, 15.0, 37.0, 33.6, 28.0, 28.8, 30.6, 28.8, 34.8, 31.2, 20.0, 17.0, 39.1, 39.6, 36.0, 28.0, 21.6, 52.0, 17.0, 27.0, 8.0, 34.8, 12.0, 14.4, 13.0, 54.0, 60.0, 14.4, 26.4, 40.8, 46.0, 45.6, 20.0, 33.0, 63.0, 78.2, 73.1, 35.0, 29.0, 30.0, 30.0, 84.0, 26.0, 12.0, 32.4, 51.6, 22.8, 6.0, 21.0, 9.0, 27.2, 10.0, 56.4, 12.0, 31.2, 32.0, 15.0, 22.8, 31.2, 23.0, 26.4, 35.0, 31.2, 46.0, 43.2, 8.0, 44.0, 27.2, 26.4, 32.3, 27.0, 19.2, 21.0, 33.6, 44.2, 37.2, 27.6, 13.6, 71.4, 44.0, 19.0, 19.0, 11.0, 31.0, 29.0, 39.6, 11.0, 21.6, 20.4, 34.8, 61.2, 39.1, 95.2, 7.0, 55.0, 31.0, 46.8, 16.0, 15.3, 54.0, 38.4, 38.0, 11.0, 13.0, 51.6, 33.6, 37.4, 39.1, 24.0, 10.8, 27.0, 26.0, 52.0, 34.8, 15.0, 33.6, 24.0, 21.0, 25.5, 13.2, 16.8, 51.0, 20.4, 33.6, 22.8, 62.0, 30.0, 18.0, 39.1], "mean": 31.97}, "derive": {"_edge": {"opts": ["edge"], "map": {"1": ", edgecolor=\"white\""}, "default": ""}, "_dens": {"opts": ["dens"], "map": {"1": ", density=True"}, "default": ""}, "_cum": {"opts": ["cum"], "map": {"1": ", cumulative=True"}, "default": ""}, "_ylab": {"opts": ["dens"], "map": {"1": "proportion"}, "default": "rentals"}, "_sedge": {"opts": ["edge"], "map": {"1": ""}, "default": ", edgecolor=None"}, "_sdens": {"opts": ["dens"], "map": {"1": ", stat=\"density\""}, "default": ""}, "_scum": {"opts": ["cum"], "map": {"1": ", cumulative=True"}, "default": ""}, "_phnorm": {"opts": ["dens"], "map": {"1": ", histnorm=\"probability density\""}, "default": ""}, "_phcum": {"opts": ["cum"], "map": {"1": ", cumulative=True"}, "default": ""}, "_phtitle": {"opts": ["title"], "map": {"1": ", title=\"Most rentals are small; a few are not\""}, "default": ""}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["ax.hist(rentals[\"amount\"], bins={{bins}}{{_edge}}{{_dens}}{{_cum}})"]}, {"lines": ["ax.axvline(rentals[\"amount\"].mean(), color=\"#C8102E\", linestyle=\"--\")"], "if": "mean"}, {"lines": ["ax.set_title(\"Most rentals are small; a few are not\")", "ax.set_xlabel(\"amount ($)\")", "ax.set_ylabel(\"{{_ylab}}\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"whitegrid\")", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["sns.histplot(data=rentals, x=\"amount\", bins={{bins}}{{_sedge}}{{_sdens}}{{_scum}},", "             ax=ax)"]}, {"lines": ["ax.axvline(rentals[\"amount\"].mean(), color=\"#C8102E\", linestyle=\"--\")"], "if": "mean"}, {"lines": ["ax.set_title(\"Most rentals are small; a few are not\")", "ax.set_xlabel(\"amount ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", ""]}, {"lines": ["fig = px.histogram(rentals, x=\"amount\", nbins={{bins}}{{_phnorm}}{{_phcum}}{{_phtitle}})"]}, {"lines": ["fig.update_traces(marker_line_width=1, marker_line_color=\"white\")"], "if": "edge"}, {"lines": ["fig.add_vline(x=rentals[\"amount\"].mean(), line_dash=\"dash\", line_color=\"#C8102E\")"], "if": "mean"}, {"lines": ["fig.update_layout(xaxis_title=\"amount ($)\", yaxis_title=\"{{_ylab}}\")"], "if": "title"}, {"lines": ["fig.show()"]}]}}, "box": {"name": "Box plot", "blurb": "One numeric column per group, side by side. Median, middle half, and the values out on their own.", "options": [{"id": "means", "label": "Show the mean", "kind": "bool", "default": true, "note": "The triangle. When it sits above the median line, a right tail is pulling it."}, {"id": "horiz", "label": "Horizontal", "kind": "bool", "default": false, "note": "Again: horizontal when the group names are words."}, {"id": "notch", "label": "Notches", "kind": "bool", "default": false, "note": "A rough confidence interval for the median. Non-overlapping notches suggest a real difference."}, {"id": "points", "label": "Show the individual points", "kind": "bool", "default": false, "note": "Honest with small groups — a box over nine values hides how little there is."}, {"id": "colour", "label": "Colour by group", "kind": "bool", "default": false, "note": "Decoration unless the colours mean something elsewhere in your deck."}, {"id": "title", "label": "Title and axis labels", "kind": "bool", "default": true, "note": "Always."}], "data": {"groups": ["E-Bike", "Hybrid", "Road"], "values": [[98.6, 42.5, 39.1, 42.5, 57.8, 18.7, 27.2, 17.0, 23.8, 13.6, 56.1, 57.8, 30.6, 35.7, 40.8, 69.7, 45.9, 25.5, 56.1, 25.5, 44.2, 28.9, 20.4, 37.4, 23.8, 28.9, 52.7, 28.9, 59.5, 27.2, 11.9, 61.2, 23.8, 30.6, 17.0, 39.1, 17.0, 40.8, 78.2, 73.1, 27.2, 27.2, 32.3, 44.2, 13.6, 71.4, 39.1, 95.2, 15.3, 37.4, 39.1, 25.5, 51.0, 39.1], [34.0, 22.0, 26.0, 17.0, 13.0, 18.0, 38.0, 40.0, 30.0, 41.0, 44.0, 45.0, 24.0, 36.0, 10.0, 20.0, 18.0, 21.0, 19.0, 41.0, 49.0, 33.0, 12.0, 32.0, 28.0, 39.0, 16.0, 16.0, 32.0, 32.0, 24.0, 24.0, 17.0, 31.0, 28.0, 23.0, 32.0, 45.0, 25.0, 15.0, 37.0, 28.0, 20.0, 36.0, 28.0, 52.0, 27.0, 8.0, 12.0, 13.0, 46.0, 20.0, 33.0, 63.0, 35.0, 29.0, 30.0, 26.0, 12.0, 6.0, 21.0, 9.0, 10.0, 12.0, 32.0, 15.0, 23.0, 35.0, 46.0, 8.0, 44.0, 27.0, 21.0, 44.0, 19.0, 19.0, 11.0, 31.0, 29.0, 11.0, 7.0, 55.0, 31.0, 16.0, 38.0, 11.0, 13.0, 24.0, 27.0, 26.0, 52.0, 15.0, 21.0, 62.0, 18.0], [43.2, 48.0, 12.0, 33.6, 22.8, 19.2, 32.4, 33.6, 37.2, 33.6, 34.8, 52.8, 19.2, 42.0, 20.4, 26.4, 38.4, 18.0, 46.8, 43.2, 26.4, 37.2, 34.8, 51.6, 25.2, 43.2, 27.6, 28.8, 38.4, 16.8, 15.6, 21.6, 8.4, 51.6, 32.4, 21.6, 22.8, 44.4, 16.8, 52.8, 33.6, 28.8, 28.8, 34.8, 31.2, 39.6, 21.6, 34.8, 14.4, 54.0, 60.0, 14.4, 26.4, 45.6, 30.0, 84.0, 32.4, 51.6, 22.8, 56.4, 31.2, 22.8, 31.2, 26.4, 31.2, 43.2, 26.4, 19.2, 33.6, 37.2, 27.6, 39.6, 21.6, 20.4, 34.8, 61.2, 46.8, 54.0, 38.4, 51.6, 33.6, 10.8, 34.8, 33.6, 24.0, 13.2, 16.8, 20.4, 33.6, 22.8, 30.0]]}, "derive": {"_means": {"opts": ["means"], "map": {"1": ", showmeans=True"}, "default": ""}, "_notch": {"opts": ["notch"], "map": {"1": ", notch=True"}, "default": ""}, "_vert": {"opts": ["horiz"], "map": {"1": ", vert=False"}, "default": ""}, "_patch": {"opts": ["colour"], "map": {"1": ", patch_artist=True"}, "default": ""}, "_sxy": {"opts": ["horiz"], "map": {"1": "y=\"bike_type\", x=\"amount\", "}, "default": "x=\"bike_type\", y=\"amount\", "}, "_smeans": {"opts": ["means"], "map": {"1": "showmeans=True, "}, "default": ""}, "_snotch": {"opts": ["notch"], "map": {"1": "notch=True, "}, "default": ""}, "_scol": {"opts": ["colour"], "map": {"1": "hue=\"bike_type\", legend=False, "}, "default": ""}, "_pxy": {"opts": ["horiz"], "map": {"1": "y=\"bike_type\", x=\"amount\""}, "default": "x=\"bike_type\", y=\"amount\""}, "_pcol": {"opts": ["colour"], "map": {"1": ", color=\"bike_type\""}, "default": ""}, "_ppoints": {"opts": ["points"], "map": {"1": ", points=\"all\""}, "default": ", points=\"outliers\""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"E-Bike rentals cost more, and vary more\""}, "default": ""}, "_pnotch": {"opts": ["notch"], "map": {"1": ", notched=True"}, "default": ""}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", "", "groups = [g[\"amount\"].values for _, g in rentals.groupby(\"bike_type\")]", "labels = list(rentals.groupby(\"bike_type\").groups.keys())", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["ax.boxplot(groups, tick_labels=labels{{_means}}{{_notch}}{{_vert}}{{_patch}})"]}, {"lines": ["for i, g in enumerate(groups, start=1):", "    x = np.random.normal(i, 0.05, len(g))", "    ax.scatter(x, g, s=8, alpha=.4, color=\"#5A5A5F\")"], "if": "points"}, {"lines": ["ax.set_title(\"E-Bike rentals cost more, and vary more\")", "ax.set_ylabel(\"amount ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"whitegrid\")", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["sns.boxplot(data=rentals, {{_sxy}}{{_smeans}}{{_snotch}}{{_scol}}ax=ax)"]}, {"lines": ["sns.stripplot(data=rentals, {{_sxy}}color=\"#2F2F33\", size=3, alpha=.4, ax=ax)"], "if": "points"}, {"lines": ["ax.set_title(\"E-Bike rentals cost more, and vary more\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", ""]}, {"lines": ["fig = px.box(rentals, {{_pxy}}{{_pcol}}{{_ppoints}}{{_ptitle}}{{_pnotch}})"]}, {"lines": ["fig.update_traces(boxmean=True)"], "if": "means"}, {"lines": ["fig.show()"]}]}}, "line": {"name": "Line chart", "blurb": "A number over time. The join says the gaps are equal and in order — only use it when that is true.", "options": [{"id": "marker", "label": "Markers on the points", "kind": "bool", "default": true, "note": "Shows where you actually have data, instead of implying a smooth curve."}, {"id": "zero", "label": "Y-axis starts at zero", "kind": "bool", "default": true, "note": "Cropping a line is allowed if you say so — but look at what it does to the drama."}, {"id": "fill", "label": "Fill under the line", "kind": "bool", "default": false, "note": "Implies a running total or a volume. Misleading for a rate."}, {"id": "dash", "label": "Dashed line", "kind": "bool", "default": false, "note": "Keep dashes for forecasts and targets, so solid always means actual."}, {"id": "annot", "label": "Annotate the peak", "kind": "bool", "default": false, "note": "One annotation, on the thing you want remembered."}, {"id": "title", "label": "Title and axis labels", "kind": "bool", "default": true, "note": "Revenue in what? Per what?"}], "data": {"x": ["Apr", "May", "Jun", "Jul", "Aug", "Sep"], "y": [1274.6, 1092.5, 1323.2, 1540.6, 1253.7, 1188.9], "peak": "Jul", "peak_v": 1540.6}, "derive": {"_marker": {"opts": ["marker"], "map": {"1": ", marker=\"o\""}, "default": ""}, "_dash": {"opts": ["dash"], "map": {"1": ", linestyle=\"--\""}, "default": ""}, "_smarker": {"opts": ["marker"], "map": {"1": ", marker=\"o\""}, "default": ""}, "_sdash": {"opts": ["dash"], "map": {"1": ", linestyle=\"--\""}, "default": ""}, "_pmarker": {"opts": ["marker"], "map": {"1": ", markers=True"}, "default": ""}, "_pfill": {"opts": ["fill"], "map": {"1": ", line_shape=\"linear\""}, "default": ""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"Revenue peaks in July\""}, "default": ""}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "monthly = rentals.groupby(\"month\")[\"amount\"].sum().reindex(order)", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["ax.plot(monthly.index, monthly.values{{_marker}}{{_dash}})"]}, {"lines": ["ax.fill_between(monthly.index, monthly.values, alpha=.2)"], "if": "fill"}, {"lines": ["ax.set_ylim(0, monthly.max() * 1.15)"], "if": "zero"}, {"lines": ["ax.annotate(\"July: $%.0f\" % monthly.max(), xy=(\"Jul\", monthly[\"Jul\"]),", "            xytext=(\"Aug\", monthly.max() * 1.05),", "            arrowprops={\"arrowstyle\": \"->\"})"], "if": "annot"}, {"lines": ["ax.set_title(\"Revenue peaks in July\")", "ax.set_xlabel(\"month\")", "ax.set_ylabel(\"revenue ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"whitegrid\")", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "monthly = rentals.groupby(\"month\")[\"amount\"].sum().reindex(order).reset_index()", "", "fig, ax = plt.subplots(figsize=(6, 3.2))"]}, {"lines": ["sns.lineplot(data=monthly, x=\"month\", y=\"amount\"{{_smarker}}{{_sdash}}, ax=ax)"]}, {"lines": ["ax.fill_between(monthly[\"month\"], monthly[\"amount\"], alpha=.2)"], "if": "fill"}, {"lines": ["ax.set_ylim(0, monthly[\"amount\"].max() * 1.15)"], "if": "zero"}, {"lines": ["ax.annotate(\"July: $1541\", xy=(\"Jul\", 1541), xytext=(\"Aug\", 1700),", "            arrowprops={\"arrowstyle\": \"->\"})"], "if": "annot"}, {"lines": ["ax.set_title(\"Revenue peaks in July\")", "ax.set_ylabel(\"revenue ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "monthly = (rentals.groupby(\"month\", as_index=False)[\"amount\"].sum()", "           .set_index(\"month\").reindex(order).reset_index())", ""]}, {"lines": ["fig = px.line(monthly, x=\"month\", y=\"amount\"{{_pmarker}}{{_pfill}}{{_ptitle}})"]}, {"lines": ["fig.update_traces(line_dash=\"dash\")"], "if": "dash"}, {"lines": ["fig.update_yaxes(rangemode=\"tozero\")"], "if": "zero"}, {"lines": ["fig.add_annotation(x=\"Jul\", y=1541, text=\"July: $1541\", showarrow=True)"], "if": "annot"}, {"lines": ["fig.update_layout(yaxis_title=\"revenue ($)\")"], "if": "title"}, {"lines": ["fig.show()"]}]}}, "multiline": {"name": "Multi-line chart", "blurb": "One line per group over time. Three or four lines is the limit before it becomes spaghetti.", "options": [{"id": "marker", "label": "Markers", "kind": "bool", "default": true, "note": "Same reason as a single line."}, {"id": "legend", "label": "Legend with a title", "kind": "bool", "default": true, "note": "Without a title, the reader has to guess what the colours split by."}, {"id": "one", "label": "Grey out all but one", "kind": "bool", "default": false, "note": "The fix for spaghetti: one coloured line, the rest grey for context."}, {"id": "zero", "label": "Y-axis starts at zero", "kind": "bool", "default": false, "note": "Lines compare shapes; starting at zero also lets you compare levels."}, {"id": "grid", "label": "Gridlines", "kind": "bool", "default": true, "note": "With several lines, horizontal rules help you read values across."}, {"id": "title", "label": "Title and axis labels", "kind": "bool", "default": true, "note": "Say what the comparison shows."}], "data": {"x": ["Apr", "May", "Jun", "Jul", "Aug", "Sep"], "series": {"E-Bike": [333.2, 175.1, 425.0, 598.4, 317.9, 277.1], "Hybrid": [369.0, 513.0, 423.0, 431.0, 457.0, 361.0], "Road": [572.4, 404.4, 475.2, 511.2, 478.8, 550.8]}}, "derive": {"_marker": {"opts": ["marker"], "map": {"1": ", marker=\"o\""}, "default": ""}, "_style": {"opts": ["grid"], "map": {"1": "whitegrid"}, "default": "white"}, "_smarker": {"opts": ["marker"], "map": {"1": ", marker=\"o\""}, "default": ""}, "_spal": {"opts": ["one"], "map": {"1": ", palette=[\"#C8102E\", \"#C9CFDA\", \"#C9CFDA\"]"}, "default": ""}, "_pmarker": {"opts": ["marker"], "map": {"1": ", markers=True"}, "default": ""}, "_ppal": {"opts": ["one"], "map": {"1": ", color_discrete_sequence=[\"#C8102E\", \"#C9CFDA\", \"#C9CFDA\"]"}, "default": ""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"E-Bike revenue swings hardest across the season\""}, "default": ""}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "by_month = rentals.pivot_table(index=\"month\", columns=\"bike_type\",", "                               values=\"amount\", aggfunc=\"sum\").reindex(order)", "", "fig, ax = plt.subplots(figsize=(6.5, 3.4))"]}, {"lines": ["for bike in by_month.columns:", "    ax.plot(by_month.index, by_month[bike]{{_marker}}, label=bike)"], "ifNot": "one"}, {"lines": ["for bike in by_month.columns:", "    is_focus = bike == \"E-Bike\"", "    ax.plot(by_month.index, by_month[bike]{{_marker}}, label=bike,", "            color=\"#C8102E\" if is_focus else \"#C9CFDA\",", "            zorder=3 if is_focus else 1)"], "if": "one"}, {"lines": ["ax.legend(title=\"bike type\")"], "if": "legend"}, {"lines": ["ax.set_ylim(0, by_month.values.max() * 1.15)"], "if": "zero"}, {"lines": ["ax.grid(axis=\"y\", alpha=.3)", "ax.set_axisbelow(True)"], "if": "grid"}, {"lines": ["ax.set_title(\"E-Bike revenue swings hardest across the season\")", "ax.set_ylabel(\"revenue ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"{{_style}}\")", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "by_month = (rentals.groupby([\"month\", \"bike_type\"], as_index=False)[\"amount\"].sum())", "", "fig, ax = plt.subplots(figsize=(6.5, 3.4))"]}, {"lines": ["sns.lineplot(data=by_month, x=\"month\", y=\"amount\", hue=\"bike_type\"{{_smarker}}{{_spal}},", "             ax=ax)"]}, {"lines": ["ax.legend(title=\"bike type\")"], "if": "legend"}, {"lines": ["ax.legend_.remove()"], "ifNot": "legend"}, {"lines": ["ax.set_ylim(0, by_month[\"amount\"].max() * 1.15)"], "if": "zero"}, {"lines": ["ax.set_title(\"E-Bike revenue swings hardest across the season\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", "", "order = [\"Apr\", \"May\", \"Jun\", \"Jul\", \"Aug\", \"Sep\"]", "by_month = rentals.groupby([\"month\", \"bike_type\"], as_index=False)[\"amount\"].sum()", ""]}, {"lines": ["fig = px.line(by_month, x=\"month\", y=\"amount\", color=\"bike_type\"{{_pmarker}}{{_ppal}}{{_ptitle}},", "              category_orders={\"month\": order})"]}, {"lines": ["fig.update_layout(legend_title_text=\"bike type\")"], "if": "legend"}, {"lines": ["fig.update_layout(showlegend=False)"], "ifNot": "legend"}, {"lines": ["fig.update_yaxes(rangemode=\"tozero\")"], "if": "zero"}, {"lines": ["fig.update_yaxes(showgrid={{grid}})"]}, {"lines": ["fig.show()"]}]}}, "scatter": {"name": "Scatter plot", "blurb": "One dot per row, two numeric columns. How you look at a relationship before you measure one.", "options": [{"id": "alpha", "label": "See-through points", "kind": "bool", "default": true, "note": "Without it you cannot tell two overlapping rows from twenty."}, {"id": "colour", "label": "Colour by category", "kind": "bool", "default": true, "note": "What looks like noise is often two or three groups stacked up."}, {"id": "size", "label": "Size by a third column", "kind": "bool", "default": false, "note": "Makes it a bubble chart. Area is judged badly — never use it for the main number."}, {"id": "trend", "label": "Trend line", "kind": "bool", "default": false, "note": "Only honest once the groups are separated — one line through three rates fits none."}, {"id": "grid", "label": "Gridlines", "kind": "bool", "default": false, "note": "Helps read a point's position off both axes."}, {"id": "title", "label": "Title and axis labels", "kind": "bool", "default": true, "note": "A scatter with no axis labels is a decoration."}], "data": {"points": [{"x": 3.6, "y": 43.2, "g": "Road", "s": 3.8}, {"x": 5.8, "y": 98.6, "g": "E-Bike", "s": 4.6}, {"x": 3.4, "y": 34.0, "g": "Hybrid", "s": 3.7}, {"x": 4.0, "y": 48.0, "g": "Road", "s": 2.5}, {"x": 2.2, "y": 22.0, "g": "Hybrid", "s": 3.9}, {"x": 2.5, "y": 42.5, "g": "E-Bike", "s": 4.3}, {"x": 2.6, "y": 26.0, "g": "Hybrid", "s": 4.1}, {"x": 1.0, "y": 12.0, "g": "Road", "s": 3.7}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 3.4}, {"x": 1.9, "y": 22.8, "g": "Road", "s": 4.0}, {"x": 2.3, "y": 39.1, "g": "E-Bike", "s": 4.1}, {"x": 1.7, "y": 17.0, "g": "Hybrid", "s": 3.5}, {"x": 2.5, "y": 42.5, "g": "E-Bike", "s": 4.2}, {"x": 1.3, "y": 13.0, "g": "Hybrid", "s": 4.4}, {"x": 3.4, "y": 57.8, "g": "E-Bike", "s": 4.6}, {"x": 1.1, "y": 18.7, "g": "E-Bike", "s": 4.5}, {"x": 1.8, "y": 18.0, "g": "Hybrid", "s": 4.3}, {"x": 1.6, "y": 19.2, "g": "Road", "s": 4.5}, {"x": 1.6, "y": 27.2, "g": "E-Bike", "s": 4.3}, {"x": 2.7, "y": 32.4, "g": "Road", "s": 4.4}, {"x": 3.8, "y": 38.0, "g": "Hybrid", "s": 4.0}, {"x": 4.0, "y": 40.0, "g": "Hybrid", "s": 3.8}, {"x": 3.0, "y": 30.0, "g": "Hybrid", "s": 4.0}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 3.6}, {"x": 4.1, "y": 41.0, "g": "Hybrid", "s": 4.5}, {"x": 1.0, "y": 17.0, "g": "E-Bike", "s": 4.6}, {"x": 4.4, "y": 44.0, "g": "Hybrid", "s": 4.5}, {"x": 3.1, "y": 37.2, "g": "Road", "s": 4.0}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 3.9}, {"x": 4.5, "y": 45.0, "g": "Hybrid", "s": 4.4}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 3.2}, {"x": 4.4, "y": 52.8, "g": "Road", "s": 3.5}, {"x": 1.6, "y": 19.2, "g": "Road", "s": 4.2}, {"x": 1.4, "y": 23.8, "g": "E-Bike", "s": 4.8}, {"x": 0.8, "y": 13.6, "g": "E-Bike", "s": 4.2}, {"x": 3.3, "y": 56.1, "g": "E-Bike", "s": 4.1}, {"x": 2.4, "y": 24.0, "g": "Hybrid", "s": 3.3}, {"x": 3.4, "y": 57.8, "g": "E-Bike", "s": 3.4}, {"x": 3.6, "y": 36.0, "g": "Hybrid", "s": 3.7}, {"x": 1.0, "y": 10.0, "g": "Hybrid", "s": 3.1}, {"x": 3.5, "y": 42.0, "g": "Road", "s": 3.5}, {"x": 1.7, "y": 20.4, "g": "Road", "s": 3.9}, {"x": 2.0, "y": 20.0, "g": "Hybrid", "s": 3.6}, {"x": 1.8, "y": 18.0, "g": "Hybrid", "s": 4.1}, {"x": 2.2, "y": 26.4, "g": "Road", "s": 4.3}, {"x": 1.8, "y": 30.6, "g": "E-Bike", "s": 3.6}, {"x": 3.2, "y": 38.4, "g": "Road", "s": 4.0}, {"x": 1.5, "y": 18.0, "g": "Road", "s": 4.3}, {"x": 2.1, "y": 35.7, "g": "E-Bike", "s": 3.7}, {"x": 2.1, "y": 21.0, "g": "Hybrid", "s": 4.3}, {"x": 3.9, "y": 46.8, "g": "Road", "s": 4.2}, {"x": 1.9, "y": 19.0, "g": "Hybrid", "s": 4.6}, {"x": 4.1, "y": 41.0, "g": "Hybrid", "s": 3.2}, {"x": 3.6, "y": 43.2, "g": "Road", "s": 3.7}, {"x": 2.2, "y": 26.4, "g": "Road", "s": 3.3}, {"x": 4.9, "y": 49.0, "g": "Hybrid", "s": 3.8}, {"x": 3.3, "y": 33.0, "g": "Hybrid", "s": 4.6}, {"x": 2.4, "y": 40.8, "g": "E-Bike", "s": 3.4}, {"x": 3.1, "y": 37.2, "g": "Road", "s": 4.1}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 3.6}, {"x": 4.3, "y": 51.6, "g": "Road", "s": 4.8}, {"x": 4.1, "y": 69.7, "g": "E-Bike", "s": 5.0}, {"x": 1.2, "y": 12.0, "g": "Hybrid", "s": 3.7}, {"x": 2.7, "y": 45.9, "g": "E-Bike", "s": 3.9}, {"x": 1.5, "y": 25.5, "g": "E-Bike", "s": 5.0}, {"x": 3.2, "y": 32.0, "g": "Hybrid", "s": 4.3}, {"x": 2.8, "y": 28.0, "g": "Hybrid", "s": 3.1}, {"x": 3.3, "y": 56.1, "g": "E-Bike", "s": 4.3}, {"x": 3.9, "y": 39.0, "g": "Hybrid", "s": 3.6}, {"x": 1.6, "y": 16.0, "g": "Hybrid", "s": 4.2}, {"x": 2.1, "y": 25.2, "g": "Road", "s": 4.6}, {"x": 3.6, "y": 43.2, "g": "Road", "s": 3.6}, {"x": 1.5, "y": 25.5, "g": "E-Bike", "s": 4.0}, {"x": 2.6, "y": 44.2, "g": "E-Bike", "s": 4.1}, {"x": 1.7, "y": 28.9, "g": "E-Bike", "s": 4.2}, {"x": 1.6, "y": 16.0, "g": "Hybrid", "s": 3.6}, {"x": 3.2, "y": 32.0, "g": "Hybrid", "s": 4.2}, {"x": 2.3, "y": 27.6, "g": "Road", "s": 4.5}, {"x": 3.2, "y": 32.0, "g": "Hybrid", "s": 4.5}, {"x": 2.4, "y": 24.0, "g": "Hybrid", "s": 3.8}, {"x": 1.2, "y": 20.4, "g": "E-Bike", "s": 3.5}, {"x": 2.2, "y": 37.4, "g": "E-Bike", "s": 4.5}, {"x": 1.4, "y": 23.8, "g": "E-Bike", "s": 4.9}, {"x": 2.4, "y": 24.0, "g": "Hybrid", "s": 4.0}, {"x": 2.4, "y": 28.8, "g": "Road", "s": 3.8}, {"x": 3.2, "y": 38.4, "g": "Road", "s": 4.7}, {"x": 1.4, "y": 16.8, "g": "Road", "s": 3.9}, {"x": 1.7, "y": 28.9, "g": "E-Bike", "s": 4.1}, {"x": 1.3, "y": 15.6, "g": "Road", "s": 4.1}, {"x": 1.7, "y": 17.0, "g": "Hybrid", "s": 3.7}, {"x": 3.1, "y": 52.7, "g": "E-Bike", "s": 4.2}, {"x": 1.8, "y": 21.6, "g": "Road", "s": 3.7}, {"x": 0.7, "y": 8.4, "g": "Road", "s": 3.4}, {"x": 1.7, "y": 28.9, "g": "E-Bike", "s": 4.1}, {"x": 3.5, "y": 59.5, "g": "E-Bike", "s": 4.7}, {"x": 4.3, "y": 51.6, "g": "Road", "s": 3.9}, {"x": 1.6, "y": 27.2, "g": "E-Bike", "s": 5.0}, {"x": 2.7, "y": 32.4, "g": "Road", "s": 4.5}, {"x": 1.8, "y": 21.6, "g": "Road", "s": 4.3}, {"x": 1.9, "y": 22.8, "g": "Road", "s": 3.8}, {"x": 0.7, "y": 11.9, "g": "E-Bike", "s": 4.7}, {"x": 3.1, "y": 31.0, "g": "Hybrid", "s": 3.3}, {"x": 2.8, "y": 28.0, "g": "Hybrid", "s": 4.0}, {"x": 3.6, "y": 61.2, "g": "E-Bike", "s": 4.2}, {"x": 2.3, "y": 23.0, "g": "Hybrid", "s": 4.2}, {"x": 1.4, "y": 23.8, "g": "E-Bike", "s": 4.2}, {"x": 3.7, "y": 44.4, "g": "Road", "s": 3.8}, {"x": 3.2, "y": 32.0, "g": "Hybrid", "s": 3.7}, {"x": 4.5, "y": 45.0, "g": "Hybrid", "s": 4.1}, {"x": 1.4, "y": 16.8, "g": "Road", "s": 4.2}, {"x": 4.4, "y": 52.8, "g": "Road", "s": 3.7}, {"x": 2.5, "y": 25.0, "g": "Hybrid", "s": 4.1}, {"x": 1.5, "y": 15.0, "g": "Hybrid", "s": 4.2}, {"x": 3.7, "y": 37.0, "g": "Hybrid", "s": 4.9}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 4.1}, {"x": 2.8, "y": 28.0, "g": "Hybrid", "s": 4.0}, {"x": 2.4, "y": 28.8, "g": "Road", "s": 4.7}, {"x": 1.8, "y": 30.6, "g": "E-Bike", "s": 3.8}, {"x": 2.4, "y": 28.8, "g": "Road", "s": 3.9}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 4.7}, {"x": 2.6, "y": 31.2, "g": "Road", "s": 4.1}, {"x": 2.0, "y": 20.0, "g": "Hybrid", "s": 3.8}, {"x": 1.0, "y": 17.0, "g": "E-Bike", "s": 4.6}, {"x": 2.3, "y": 39.1, "g": "E-Bike", "s": 3.9}, {"x": 3.3, "y": 39.6, "g": "Road", "s": 4.2}, {"x": 3.6, "y": 36.0, "g": "Hybrid", "s": 4.3}, {"x": 2.8, "y": 28.0, "g": "Hybrid", "s": 3.3}, {"x": 1.8, "y": 21.6, "g": "Road", "s": 3.8}, {"x": 5.2, "y": 52.0, "g": "Hybrid", "s": 3.3}, {"x": 1.0, "y": 17.0, "g": "E-Bike", "s": 3.5}, {"x": 2.7, "y": 27.0, "g": "Hybrid", "s": 4.3}, {"x": 0.8, "y": 8.0, "g": "Hybrid", "s": 4.0}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 3.8}, {"x": 1.2, "y": 12.0, "g": "Hybrid", "s": 4.2}, {"x": 1.2, "y": 14.4, "g": "Road", "s": 3.3}, {"x": 1.3, "y": 13.0, "g": "Hybrid", "s": 3.8}, {"x": 4.5, "y": 54.0, "g": "Road", "s": 3.4}, {"x": 5.0, "y": 60.0, "g": "Road", "s": 3.9}, {"x": 1.2, "y": 14.4, "g": "Road", "s": 4.0}, {"x": 2.2, "y": 26.4, "g": "Road", "s": 4.2}, {"x": 2.4, "y": 40.8, "g": "E-Bike", "s": 5.0}, {"x": 4.6, "y": 46.0, "g": "Hybrid", "s": 3.5}, {"x": 3.8, "y": 45.6, "g": "Road", "s": 4.3}, {"x": 2.0, "y": 20.0, "g": "Hybrid", "s": 3.3}, {"x": 3.3, "y": 33.0, "g": "Hybrid", "s": 4.4}, {"x": 6.3, "y": 63.0, "g": "Hybrid", "s": 4.4}, {"x": 4.6, "y": 78.2, "g": "E-Bike", "s": 4.8}, {"x": 4.3, "y": 73.1, "g": "E-Bike", "s": 4.3}, {"x": 3.5, "y": 35.0, "g": "Hybrid", "s": 4.3}, {"x": 2.9, "y": 29.0, "g": "Hybrid", "s": 3.8}, {"x": 2.5, "y": 30.0, "g": "Road", "s": 3.6}, {"x": 3.0, "y": 30.0, "g": "Hybrid", "s": 3.6}, {"x": 7.0, "y": 84.0, "g": "Road", "s": 3.4}, {"x": 2.6, "y": 26.0, "g": "Hybrid", "s": 4.2}, {"x": 1.2, "y": 12.0, "g": "Hybrid", "s": 4.4}, {"x": 2.7, "y": 32.4, "g": "Road", "s": 4.6}, {"x": 4.3, "y": 51.6, "g": "Road", "s": 3.9}, {"x": 1.9, "y": 22.8, "g": "Road", "s": 4.6}, {"x": 0.6, "y": 6.0, "g": "Hybrid", "s": 3.4}, {"x": 2.1, "y": 21.0, "g": "Hybrid", "s": 4.8}, {"x": 0.9, "y": 9.0, "g": "Hybrid", "s": 4.0}, {"x": 1.6, "y": 27.2, "g": "E-Bike", "s": 4.1}, {"x": 1.0, "y": 10.0, "g": "Hybrid", "s": 4.8}, {"x": 4.7, "y": 56.4, "g": "Road", "s": 4.4}, {"x": 1.2, "y": 12.0, "g": "Hybrid", "s": 4.2}, {"x": 2.6, "y": 31.2, "g": "Road", "s": 4.3}, {"x": 3.2, "y": 32.0, "g": "Hybrid", "s": 4.0}, {"x": 1.5, "y": 15.0, "g": "Hybrid", "s": 3.9}, {"x": 1.9, "y": 22.8, "g": "Road", "s": 4.1}, {"x": 2.6, "y": 31.2, "g": "Road", "s": 5.0}, {"x": 2.3, "y": 23.0, "g": "Hybrid", "s": 4.6}, {"x": 2.2, "y": 26.4, "g": "Road", "s": 4.2}, {"x": 3.5, "y": 35.0, "g": "Hybrid", "s": 4.1}, {"x": 2.6, "y": 31.2, "g": "Road", "s": 4.2}, {"x": 4.6, "y": 46.0, "g": "Hybrid", "s": 4.1}, {"x": 3.6, "y": 43.2, "g": "Road", "s": 4.0}, {"x": 0.8, "y": 8.0, "g": "Hybrid", "s": 3.7}, {"x": 4.4, "y": 44.0, "g": "Hybrid", "s": 4.4}, {"x": 1.6, "y": 27.2, "g": "E-Bike", "s": 3.8}, {"x": 2.2, "y": 26.4, "g": "Road", "s": 3.7}, {"x": 1.9, "y": 32.3, "g": "E-Bike", "s": 4.8}, {"x": 2.7, "y": 27.0, "g": "Hybrid", "s": 3.4}, {"x": 1.6, "y": 19.2, "g": "Road", "s": 4.8}, {"x": 2.1, "y": 21.0, "g": "Hybrid", "s": 4.4}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 4.1}, {"x": 2.6, "y": 44.2, "g": "E-Bike", "s": 3.9}, {"x": 3.1, "y": 37.2, "g": "Road", "s": 3.4}, {"x": 2.3, "y": 27.6, "g": "Road", "s": 4.1}, {"x": 0.8, "y": 13.6, "g": "E-Bike", "s": 4.7}, {"x": 4.2, "y": 71.4, "g": "E-Bike", "s": 3.6}, {"x": 4.4, "y": 44.0, "g": "Hybrid", "s": 3.7}, {"x": 1.9, "y": 19.0, "g": "Hybrid", "s": 3.8}, {"x": 1.9, "y": 19.0, "g": "Hybrid", "s": 4.2}, {"x": 1.1, "y": 11.0, "g": "Hybrid", "s": 5.0}, {"x": 3.1, "y": 31.0, "g": "Hybrid", "s": 3.5}, {"x": 2.9, "y": 29.0, "g": "Hybrid", "s": 3.0}, {"x": 3.3, "y": 39.6, "g": "Road", "s": 4.9}, {"x": 1.1, "y": 11.0, "g": "Hybrid", "s": 3.7}, {"x": 1.8, "y": 21.6, "g": "Road", "s": 4.8}, {"x": 1.7, "y": 20.4, "g": "Road", "s": 4.5}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 4.8}, {"x": 5.1, "y": 61.2, "g": "Road", "s": 3.9}, {"x": 2.3, "y": 39.1, "g": "E-Bike", "s": 4.2}, {"x": 5.6, "y": 95.2, "g": "E-Bike", "s": 4.4}, {"x": 0.7, "y": 7.0, "g": "Hybrid", "s": 4.0}, {"x": 5.5, "y": 55.0, "g": "Hybrid", "s": 3.3}, {"x": 3.1, "y": 31.0, "g": "Hybrid", "s": 4.6}, {"x": 3.9, "y": 46.8, "g": "Road", "s": 4.3}, {"x": 1.6, "y": 16.0, "g": "Hybrid", "s": 3.8}, {"x": 0.9, "y": 15.3, "g": "E-Bike", "s": 5.0}, {"x": 4.5, "y": 54.0, "g": "Road", "s": 4.1}, {"x": 3.2, "y": 38.4, "g": "Road", "s": 3.8}, {"x": 3.8, "y": 38.0, "g": "Hybrid", "s": 4.7}, {"x": 1.1, "y": 11.0, "g": "Hybrid", "s": 4.0}, {"x": 1.3, "y": 13.0, "g": "Hybrid", "s": 4.0}, {"x": 4.3, "y": 51.6, "g": "Road", "s": 3.7}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 3.6}, {"x": 2.2, "y": 37.4, "g": "E-Bike", "s": 5.0}, {"x": 2.3, "y": 39.1, "g": "E-Bike", "s": 4.1}, {"x": 2.4, "y": 24.0, "g": "Hybrid", "s": 3.5}, {"x": 0.9, "y": 10.8, "g": "Road", "s": 4.2}, {"x": 2.7, "y": 27.0, "g": "Hybrid", "s": 3.6}, {"x": 2.6, "y": 26.0, "g": "Hybrid", "s": 4.0}, {"x": 5.2, "y": 52.0, "g": "Hybrid", "s": 3.4}, {"x": 2.9, "y": 34.8, "g": "Road", "s": 4.1}, {"x": 1.5, "y": 15.0, "g": "Hybrid", "s": 3.3}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 3.7}, {"x": 2.0, "y": 24.0, "g": "Road", "s": 4.1}, {"x": 2.1, "y": 21.0, "g": "Hybrid", "s": 4.0}, {"x": 1.5, "y": 25.5, "g": "E-Bike", "s": 4.6}, {"x": 1.1, "y": 13.2, "g": "Road", "s": 4.5}, {"x": 1.4, "y": 16.8, "g": "Road", "s": 4.5}, {"x": 3.0, "y": 51.0, "g": "E-Bike", "s": 3.9}, {"x": 1.7, "y": 20.4, "g": "Road", "s": 3.0}, {"x": 2.8, "y": 33.6, "g": "Road", "s": 5.0}, {"x": 1.9, "y": 22.8, "g": "Road", "s": 3.5}, {"x": 6.2, "y": 62.0, "g": "Hybrid", "s": 4.1}, {"x": 2.5, "y": 30.0, "g": "Road", "s": 3.7}, {"x": 1.8, "y": 18.0, "g": "Hybrid", "s": 4.0}, {"x": 2.3, "y": 39.1, "g": "E-Bike", "s": 3.5}]}, "derive": {"_size": {"opts": ["size"], "map": {"1": "rentals[\"rating\"] * 6"}, "default": "18"}, "_sizeg": {"opts": ["size"], "map": {"1": "g[\"rating\"] * 6"}, "default": "18"}, "_alpha": {"opts": ["alpha"], "map": {"1": ", alpha=.6"}, "default": ""}, "_style": {"opts": ["grid"], "map": {"1": "whitegrid"}, "default": "white"}, "_scol": {"opts": ["colour"], "map": {"1": ", hue=\"bike_type\""}, "default": ""}, "_ssize": {"opts": ["size"], "map": {"1": ", size=\"rating\", sizes=(10, 90)"}, "default": ""}, "_salpha": {"opts": ["alpha"], "map": {"1": ", alpha=.6"}, "default": ", alpha=1"}, "_pcol": {"opts": ["colour"], "map": {"1": ", color=\"bike_type\""}, "default": ""}, "_psize": {"opts": ["size"], "map": {"1": ", size=\"rating\""}, "default": ""}, "_ptrend": {"opts": ["trend"], "map": {"1": ", trendline=\"ols\""}, "default": ""}, "_ptitle": {"opts": ["title"], "map": {"1": ", title=\"Longer rentals cost more\""}, "default": ""}, "_popacity": {"opts": ["alpha"], "map": {"1": ".6"}, "default": "1"}}, "rules": {"mpl": [{"lines": ["import matplotlib.pyplot as plt", "", "fig, ax = plt.subplots(figsize=(6, 3.4))"]}, {"lines": ["ax.scatter(rentals[\"hours\"], rentals[\"amount\"], s={{_size}}{{_alpha}})"], "ifNot": "colour"}, {"lines": ["for bike, g in rentals.groupby(\"bike_type\"):", "    ax.scatter(g[\"hours\"], g[\"amount\"], s={{_sizeg}}{{_alpha}}, label=bike)", "ax.legend()"], "if": "colour"}, {"lines": ["m, b = np.polyfit(rentals[\"hours\"], rentals[\"amount\"], 1)", "xs = np.linspace(rentals[\"hours\"].min(), rentals[\"hours\"].max(), 2)", "ax.plot(xs, m * xs + b, color=\"#C8102E\", linewidth=1)"], "if": "trend"}, {"lines": ["ax.grid(alpha=.3)", "ax.set_axisbelow(True)"], "if": "grid"}, {"lines": ["ax.set_title(\"Longer rentals cost more \\u2014 at three different rates\")", "ax.set_xlabel(\"hours\")", "ax.set_ylabel(\"amount ($)\")"], "if": "title"}, {"lines": ["plt.show()"]}], "sns": [{"lines": ["import seaborn as sns", "import matplotlib.pyplot as plt", "", "sns.set_theme(style=\"{{_style}}\")", "", "fig, ax = plt.subplots(figsize=(6, 3.4))"]}, {"lines": ["sns.scatterplot(data=rentals, x=\"hours\", y=\"amount\"{{_scol}}{{_ssize}}{{_salpha}},", "                ax=ax)"]}, {"lines": ["sns.regplot(data=rentals, x=\"hours\", y=\"amount\", scatter=False,", "            line_kws={\"color\": \"#C8102E\", \"linewidth\": 1}, ax=ax)"], "if": "trend"}, {"lines": ["ax.set_title(\"Longer rentals cost more \\u2014 at three different rates\")"], "if": "title"}, {"lines": ["plt.show()"]}], "plotly": [{"lines": ["import plotly.express as px", ""]}, {"lines": ["fig = px.scatter(rentals, x=\"hours\", y=\"amount\"{{_pcol}}{{_psize}}{{_ptrend}}{{_ptitle}},", "                 opacity={{_popacity}})"]}, {"lines": ["fig.update_xaxes(showgrid={{grid}})", "fig.update_yaxes(showgrid={{grid}})"]}, {"lines": ["fig.show()"]}]}}}}}</script>
+<div class="app">
+  <div class="top">
+    <h1>Cleaning, statistics and charts</h1>
+    <button class="ghost" id="theme">Light / dark</button>
+  </div>
+  <p class="lede">Three tabs: what to check in a dataset, practice questions from the slides and
+    notebooks, and a chart-code explorer for matplotlib, seaborn and plotly.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="stage"></div>
+</div>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const QS = D.questions, DQ = D.dq, VZ = D.viz;
+const $ = id => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if(c) e.className = c;
+  if(x !== undefined) e.textContent = x; return e; };
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const md = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>")
+                      .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+                      .replace(/\*([^*]+)\*/g, "<i>$1</i>");
+const raw = s => String(s);
+const norm = s => String(s).trim().toLowerCase().replace(/^["']|["']$/g, "").replace(/\s+/g, " ");
+
+/* ═════════════════════════════ 1 · data quality ══════════════════════════════ */
+let DIM = 0, EXTRA = null;
+const EXTRAS = [["wholes", "Whole-table problems"], ["steps", "The order you do it in"],
+                ["cat", "Reference"]];
+function renderDQ(){
+  const stage = $("stage"); stage.innerHTML = "";
+  const lead = el("div", "card");
+  lead.appendChild(el("h2", null, "Data quality is fitness for the decision"));
+  lead.innerHTML += '<p class="sub2">There is no such thing as clean data, only data clean enough ' +
+    'for the question you are about to ask. Quality is never one score — it is a handful of ' +
+    'measurements, each answering a different question, and each with something it cannot see.</p>';
+  stage.appendChild(lead);
+
+  const dims = el("div", "dims");
+  DQ.DIMS.forEach((d, i) => {
+    const b = el("button", "dim" + (DIM === i ? " on" : ""));
+    b.appendChild(el("div", "nm", d.name));
+    b.appendChild(el("div", "vnote", d.one || ""));
+    b.onclick = () => { DIM = i; renderDQ(); };
+    dims.appendChild(b);
+  });
+  stage.appendChild(dims);
+
+  const d = DQ.DIMS[DIM];
+  const left = el("div", "card");
+  left.appendChild(el("h2", null, d.name));
+  const what = el("p", "sub2"); what.innerHTML = d.what || ""; left.appendChild(what);
+  left.appendChild(el("h3", null, "The question it answers"));
+  const q = el("div", "q"); q.innerHTML = d.q || ""; left.appendChild(q);
+  left.appendChild(el("h3", null, "How you compute it"));
+  left.appendChild(el("pre", "out", d.code || ""));
+  if(d.blind){
+    const w = el("div", "warn");
+    w.innerHTML = "<b>What this measurement cannot see</b>" + d.blind;
+    left.appendChild(w);
+  }
+  stage.appendChild(left);
+
+  const fails = el("div", "card");
+  fails.appendChild(el("h2", null, "How it fails, and what you do"));
+  const grid = el("div", "failgrid");
+  (d.fails || []).forEach(f => {
+    const [title, spot, fix] = f;
+    const row = el("div", "fail");
+    row.appendChild(el("div", "ft", title));
+    const a = el("div", "fr");
+    a.appendChild(el("span", null, "spot"));
+    const sa = el("span"); sa.innerHTML = "<code>" + esc(spot) + "</code>"; a.appendChild(sa);
+    row.appendChild(a);
+    const bq = el("div", "fr");
+    bq.appendChild(el("span", null, "fix"));
+    const sb = el("span"); sb.innerHTML = fix; bq.appendChild(sb);
+    row.appendChild(bq);
+    grid.appendChild(row);
+  });
+  fails.appendChild(grid);
+  stage.appendChild(fails);
+
+  const more = el("div", "card");
+  more.appendChild(el("h3", null, "More"));
+  const row = el("div", "more");
+  EXTRAS.forEach(([k, label]) => {
+    const b = el("button", "mbtn" + (EXTRA === k ? " on" : ""), label);
+    b.onclick = () => { EXTRA = EXTRA === k ? null : k; renderDQ(); };
+    row.appendChild(b);
+  });
+  more.appendChild(row);
+  stage.appendChild(more);
+
+  if(EXTRA === "wholes"){
+    const c = el("div", "card");
+    c.appendChild(el("h2", null, "Problems that belong to the whole table"));
+    c.innerHTML += '<p class="sub2">No single column is wrong. The table is.</p>';
+    const t = el("table", "mini");
+    t.innerHTML = "<tr><th style='width:30%'>The problem</th><th>How you spot it</th></tr>" +
+      DQ.WHOLES.map(w => "<tr><td><b>" + esc(w[0]) + "</b><br><span style='color:var(--text-3)'>" +
+        w[1] + "</span></td><td><code>" + esc(w[2]) + "</code></td></tr>").join("");
+    c.appendChild(t); stage.appendChild(c);
+  }
+  if(EXTRA === "steps"){
+    const c = el("div", "card");
+    c.appendChild(el("h2", null, "The order you do it in"));
+    const t = el("table", "mini");
+    t.innerHTML = "<tr><th style='width:4%'>#</th><th style='width:26%'>Step</th><th>Why</th></tr>" +
+      DQ.STEPS.map((st, i) => "<tr><td>" + (i+1) + "</td><td><b>" + esc(st[0]) + "</b></td><td>" +
+        st[1] + "</td></tr>").join("");
+    c.appendChild(t); stage.appendChild(c);
+  }
+  if(EXTRA === "cat"){
+    DQ.CATALOGUE.forEach(([name, rows]) => {
+      const c = el("div", "card");
+      c.appendChild(el("h2", null, name));
+      const t = el("table", "mini");
+      t.innerHTML = "<tr><th style='width:26%'>The problem</th><th style='width:30%'>How you spot " +
+        "it</th><th>The repair</th></tr>" +
+        rows.map(r => "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] +
+                 "</td></tr>").join("");
+      c.appendChild(t); stage.appendChild(c);
+    });
+  }
+}
+
+/* ═════════════════════════════ 2 · practice ══════════════════════════════════ */
+const TOPICS = [...new Set(QS.map(q => q.topic))];
+let TOPIC = "All", POS = 0, PICKED = {}, TYPED = {};
+const pool = () => QS.filter(q => TOPIC === "All" || q.topic === TOPIC);
+const isRight = q => q.kind === "fill" ? PICKED[q.n] === true : PICKED[q.n] === q.correct;
+
+function renderQ(){
+  const stage = $("stage"); stage.innerHTML = "";
+  const chips = el("div", "tabs");
+  ["All"].concat(TOPICS).forEach(t => {
+    const n = t === "All" ? QS.length : QS.filter(q => q.topic === t).length;
+    const b = el("button", "tab" + (TOPIC === t ? " on" : ""), t + " " + n);
+    b.onclick = () => { TOPIC = t; POS = 0; renderQ(); };
+    chips.appendChild(b);
+  });
+  stage.appendChild(chips);
+
+  const list = pool();
+  const answered = list.filter(q => PICKED[q.n] !== undefined).length;
+  const right = list.filter(isRight).length;
+  const bar = el("div", "bar");
+  const track = el("div", "track"); const fl = el("i");
+  fl.style.width = (100 * answered / list.length) + "%";
+  track.appendChild(fl); bar.appendChild(track);
+  bar.appendChild(el("span", "count",
+    right + " right of " + answered + " · " + list.length + " in this set"));
+  stage.appendChild(bar);
+
+  if(POS >= list.length){ stage.appendChild(qSummary(list)); return; }
+  const q = list[POS], card = el("div", "card"), head = el("div");
+  head.appendChild(el("span", "tag", q.topic));
+  head.appendChild(el("span", "kind", q.kind === "fill" ? "type your answer" : "choose one"));
+  if(q.src) head.appendChild(el("span", "kind", q.src));
+  card.appendChild(head);
+  const stem = el("div", "stem"); stem.innerHTML = md(q.stem); card.appendChild(stem);
+  if(q.out) card.appendChild(el("pre", "out", q.out));
+  const picked = PICKED[q.n];
+
+  if(q.kind === "fill"){
+    const row = el("div", "fillrow");
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.spellcheck = false; inp.autocomplete = "off";
+    inp.placeholder = "your answer"; inp.value = TYPED[q.n] || "";
+    if(picked !== undefined){ inp.disabled = true; inp.className = picked ? "right" : "wrong"; }
+    inp.oninput = e => { TYPED[q.n] = e.target.value; };
+    const go = el("button", "btn go", "Check"); go.disabled = picked !== undefined;
+    const submit = () => { if(PICKED[q.n] !== undefined) return;
+      PICKED[q.n] = q.accept.indexOf(norm(TYPED[q.n] || "")) >= 0; renderQ(); };
+    go.onclick = submit;
+    inp.onkeydown = e => { if(e.key === "Enter") submit(); };
+    row.appendChild(inp); row.appendChild(go); card.appendChild(row);
+    if(picked !== undefined){
+      const w = el("div", "why");
+      w.innerHTML = (picked ? "<b>Right. </b>"
+        : "<b>Not quite — the answer is <code>" + esc(q.answer) + "</code>. </b>") + md(q.why);
+      card.appendChild(w);
+    }
+    setTimeout(() => { if(!inp.disabled) inp.focus(); }, 0);
+  } else {
+    q.options.forEach((o, i) => {
+      const b = el("button", "opt" + (picked === undefined ? ""
+        : (i === q.correct ? " right" : (i === picked ? " wrong" : ""))));
+      b.disabled = picked !== undefined;
+      b.appendChild(el("span", "ltr", "ABCD"[i]));
+      const s = el("span"); s.innerHTML = q.code ? "<code>" + esc(o) + "</code>" : md(o);
+      b.appendChild(s);
+      b.onclick = () => { PICKED[q.n] = i; renderQ(); };
+      card.appendChild(b);
+    });
+    if(picked !== undefined){
+      const w = el("div", "why");
+      w.innerHTML = (picked === q.correct ? "<b>Right. </b>" : "<b>Not quite. </b>") + md(q.why);
+      card.appendChild(w);
+    }
+  }
+  const nav = el("div", "nav");
+  const prev = el("button", "btn", "← Previous"); prev.disabled = POS === 0;
+  prev.onclick = () => { POS--; renderQ(); };
+  const mid = el("span", "count", (POS + 1) + " of " + list.length);
+  const next = el("button", "btn" + (PICKED[q.n] !== undefined ? " go" : ""),
+    POS === list.length - 1 ? "Finish →" : "Next →");
+  next.onclick = () => { POS++; renderQ(); };
+  nav.appendChild(prev); nav.appendChild(mid); nav.appendChild(next);
+  card.appendChild(nav);
+  stage.appendChild(card);
+}
+function qSummary(list){
+  const card = el("div", "card"), done = el("div", "done");
+  const right = list.filter(isRight).length;
+  done.appendChild(el("div", "score", right + " / " + list.length));
+  const by = el("div", "bytopic");
+  TOPICS.forEach(t => {
+    const set = list.filter(q => q.topic === t); if(!set.length) return;
+    const row = el("div");
+    row.appendChild(el("span", "", t));
+    row.appendChild(el("b", "", set.filter(isRight).length + " / " + set.length));
+    by.appendChild(row);
+  });
+  done.appendChild(by);
+  const nav = el("div", "nav"); nav.style.justifyContent = "center";
+  const back = el("button", "btn", "← Review"); back.onclick = () => { POS = 0; renderQ(); };
+  const again = el("button", "btn go", "Start again");
+  again.onclick = () => { PICKED = {}; TYPED = {}; POS = 0; renderQ(); };
+  nav.appendChild(back); nav.appendChild(again); done.appendChild(nav); card.appendChild(done);
+  return card;
+}
+
+/* ═════════════════════════════ 3 · chart code explorer ══════════════════════ */
+let CHART = VZ.order[0], LIB = "mpl", OPTS = {}, PREV = "", FIRST = true;
+
+function defaults(ch){
+  const o = {};
+  VZ.charts[ch].options.forEach(x => o[x.id] = x.default);
+  return o;
+}
+OPTS = defaults(CHART);
+
+/* ── the same renderer the build script used, so the code matches what was tested ── */
+function derive(table, opts){
+  const out = {};
+  for(const tok in table){
+    const r = table[tok];
+    const key = r.opts.map(o => opts[o] ? "1" : "0").join(",");
+    out[tok] = (key in r.map) ? r.map[key] : r.default;
+  }
+  return out;
+}
+function subst(line, vals){
+  return line.replace(/\{\{(\w+)\}\}/g, (m, k) => {
+    const v = vals[k];
+    if(v === true) return "True";
+    if(v === false) return "False";
+    return String(v);
+  });
+}
+function buildCode(ch, lib, opts){
+  const spec = VZ.charts[ch];
+  const vals = Object.assign({}, opts, derive(spec.derive, opts));
+  const out = [];
+  spec.rules[lib].forEach(r => {
+    if(r["if"] && !opts[r["if"]]) return;
+    if(r["ifNot"] && opts[r["ifNot"]]) return;
+    r.lines.forEach(ln => out.push(subst(ln, vals)));
+  });
+  return out.join("\n");
+}
+
+/* ── syntax colouring, enough for Python ── */
+function highlight(src, prevSrc){
+  const prev = new Set((prevSrc || "").split("\n"));
+  return src.split("\n").map(line => {
+    let h = esc(line);
+    h = h.replace(/(#.*)$/g, '<span class="c">$1</span>');
+    if(!/<span class="c">/.test(h)){
+      h = h.replace(/("[^"]*"|'[^']*')/g, '<span class="s">$1</span>');
+      h = h.replace(/\b(import|from|as|for|in|if|else|True|False|None|lambda)\b/g,
+                    '<span class="k">$1</span>');
+      h = h.replace(/\b(\d+\.?\d*)\b/g, '<span class="n">$1</span>');
+      h = h.replace(/\.([a-z_]+)\(/g, '.<span class="f">$1</span>(');
+    }
+    const isNew = line.trim() && !prev.has(line);
+    return isNew && prevSrc ? '<span class="hl">' + h + "</span>" : h;
+  }).join("\n");
+}
+
+/* ── preview, drawn with plotly.js ── */
+const C1 = "#4C8BF5", C2 = "#E8833A", C3 = "#2BA87E", GREY = "#C9CFDA", RED = "#C8102E";
+function layout(extra){
+  const dark = (document.documentElement.getAttribute("data-theme") ||
+    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")) === "dark";
+  return Object.assign({
+    margin: {l: 55, r: 18, t: 38, b: 46},
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: {family: "Public Sans, sans-serif", size: 12, color: dark ? "#A1A1A6" : "#5A5A5F"},
+    showlegend: false, height: 300, hovermode: "closest",
+    xaxis: {showgrid: false, zeroline: false}, yaxis: {showgrid: false, zeroline: false},
+  }, extra || {});
+}
+function draw(){
+  const d = VZ.charts[CHART].data, o = OPTS;
+  let traces = [], lay = {};
+
+  if(CHART === "bar"){
+    const lab = o.sort ? d.labels : d.alpha_labels;
+    const val = o.sort ? d.values : d.alpha_values;
+    const cols = o.one ? lab.map((_, i) => i === lab.length - 1 ? RED : GREY) : lab.map(() => C1);
+    traces = [{type: "bar", orientation: o.horiz ? "h" : "v",
+      x: o.horiz ? val : lab, y: o.horiz ? lab : val,
+      marker: {color: o.one ? (o.sort ? cols : lab.map(l => l === "South" ? RED : GREY)) : C1},
+      text: o.labels ? val.map(v => v.toFixed(0)) : null,
+      textposition: "outside", cliponaxis: false}];
+    lay = {title: o.title ? "South brings in the most revenue" : "",
+      xaxis: {title: o.horiz ? (o.title ? "revenue ($)" : "") : "", showgrid: o.horiz && o.grid},
+      yaxis: {title: !o.horiz && o.title ? "revenue ($)" : "", showgrid: !o.horiz && o.grid}};
+  }
+
+  if(CHART === "pie"){
+    traces = [{type: "pie", labels: d.labels, values: d.values,
+      hole: o.donut ? 0.45 : 0,
+      pull: o.pull ? [0, 0, 0.08] : 0,
+      rotation: o.start ? 0 : 90,
+      textinfo: (o.pct && !o.legend) ? "label+percent" : (o.pct ? "percent"
+                 : (o.legend ? "none" : "label")),
+      marker: {colors: [C1, C2, C3]}, sort: false}];
+    lay = {showlegend: !!o.legend,
+      title: o.title ? "Road bikes bring in the largest share" : "",
+      margin: {l: 20, r: 20, t: 38, b: 20}};
+  }
+
+  if(CHART === "hist"){
+    const lo = Math.min(...d.values), hi = Math.max(...d.values);
+    traces = [{type: "histogram", x: d.values,
+      xbins: {start: lo, end: hi, size: (hi - lo) / o.bins},
+      cumulative: {enabled: !!o.cum},
+      histnorm: o.dens ? "probability density" : "",
+      marker: {color: C1, line: {color: "#fff", width: o.edge ? 1 : 0}}}];
+    lay = {title: o.title ? "Most rentals are small; a few are not" : "",
+      xaxis: {title: o.title ? "amount ($)" : ""},
+      yaxis: {title: o.title ? (o.dens ? "proportion" : "rentals") : ""},
+      bargap: 0.02,
+      shapes: o.mean ? [{type: "line", x0: d.mean, x1: d.mean, y0: 0, y1: 1,
+        yref: "paper", line: {color: RED, dash: "dash", width: 2}}] : []};
+  }
+
+  if(CHART === "box"){
+    traces = d.groups.map((g, i) => ({type: "box",
+      [o.horiz ? "x" : "y"]: d.values[i], name: g,
+      boxmean: !!o.means, notched: !!o.notch,
+      boxpoints: o.points ? "all" : "outliers", jitter: 0.4, pointpos: 0,
+      marker: {color: o.colour ? [C1, C2, C3][i] : C1},
+      line: {color: o.colour ? [C1, C2, C3][i] : C1}}));
+    lay = {title: o.title ? "E-Bike rentals cost more, and vary more" : "",
+      [o.horiz ? "xaxis" : "yaxis"]: {title: o.title ? "amount ($)" : ""}};
+  }
+
+  if(CHART === "line"){
+    traces = [{type: "scatter", x: d.x, y: d.y,
+      mode: o.marker ? "lines+markers" : "lines",
+      fill: o.fill ? "tozeroy" : "none", fillcolor: "rgba(76,139,245,.2)",
+      line: {color: C1, width: 2, dash: o.dash ? "dash" : "solid"},
+      marker: {color: C1, size: 7}}];
+    lay = {title: o.title ? "Revenue peaks in July" : "",
+      xaxis: {title: o.title ? "month" : ""},
+      yaxis: {title: o.title ? "revenue ($)" : "",
+              range: o.zero ? [0, Math.max(...d.y) * 1.15] : undefined},
+      annotations: o.annot ? [{x: d.peak, y: d.peak_v, ax: 42, ay: -34,
+        text: "July: $" + d.peak_v.toFixed(0), showarrow: true, arrowhead: 2}] : []};
+  }
+
+  if(CHART === "multiline"){
+    const keys = Object.keys(d.series);
+    traces = keys.map((k, i) => ({type: "scatter", x: d.x, y: d.series[k], name: k,
+      mode: o.marker ? "lines+markers" : "lines",
+      line: {color: o.one ? (k === "E-Bike" ? RED : GREY) : [C1, C2, C3][i], width: 2},
+      marker: {size: 6}}));
+    const all = keys.flatMap(k => d.series[k]);
+    lay = {showlegend: !!o.legend, legend: {title: {text: "bike type"}},
+      title: o.title ? "E-Bike revenue swings hardest across the season" : "",
+      yaxis: {title: o.title ? "revenue ($)" : "", showgrid: !!o.grid,
+              range: o.zero ? [0, Math.max(...all) * 1.15] : undefined}};
+  }
+
+  if(CHART === "scatter"){
+    const pts = d.points, groups = [...new Set(pts.map(p => p.g))];
+    const mk = sel => ({
+      type: "scatter", mode: "markers",
+      x: sel.map(p => p.x), y: sel.map(p => p.y),
+      marker: {size: o.size ? sel.map(p => p.s * 2.6) : 7,
+               opacity: o.alpha ? 0.6 : 1}});
+    if(o.colour){
+      traces = groups.map((g, i) => {
+        const t = mk(pts.filter(p => p.g === g));
+        t.name = g; t.marker.color = [C1, C2, C3][i]; return t;
+      });
+    } else {
+      const t = mk(pts); t.marker.color = C1; traces = [t];
+    }
+    if(o.trend){
+      const n = pts.length, sx = pts.reduce((s, p) => s + p.x, 0),
+            sy = pts.reduce((s, p) => s + p.y, 0),
+            sxy = pts.reduce((s, p) => s + p.x * p.y, 0),
+            sxx = pts.reduce((s, p) => s + p.x * p.x, 0);
+      const m = (n * sxy - sx * sy) / (n * sxx - sx * sx), b = (sy - m * sx) / n;
+      const x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x));
+      traces.push({type: "scatter", mode: "lines", x: [x0, x1],
+        y: [m * x0 + b, m * x1 + b], line: {color: RED, width: 1.5}, showlegend: false});
+    }
+    lay = {showlegend: !!o.colour,
+      title: o.title ? "Longer rentals cost more" : "",
+      xaxis: {title: o.title ? "hours" : "", showgrid: !!o.grid},
+      yaxis: {title: o.title ? "amount ($)" : "", showgrid: !!o.grid}};
+  }
+
+  Plotly.react("plot", traces, layout(lay), {displayModeBar: false, responsive: true});
+}
+
+/* ── panels ── */
+function renderChips(){
+  const host = $("vchips"); host.innerHTML = "";
+  VZ.order.forEach(k => {
+    const b = el("button", "tab" + (CHART === k ? " on" : ""), VZ.charts[k].name);
+    b.onclick = () => { CHART = k; OPTS = defaults(k); PREV = ""; FIRST = true; renderAll(); };
+    host.appendChild(b);
+  });
+  $("vblurb").textContent = VZ.charts[CHART].blurb;
+}
+function renderLibs(){
+  const host = $("vlibs"); host.innerHTML = "";
+  VZ.libs.forEach(l => {
+    const b = el("button", "lib" + (LIB === l.id ? " on" : ""), l.name);
+    b.onclick = () => { LIB = l.id; PREV = ""; renderCode(); renderLibs(); };
+    host.appendChild(b);
+  });
+}
+function renderPanel(){
+  const host = $("vpanel"); host.innerHTML = "";
+  host.appendChild(el("h3", null, "Options"));
+  VZ.charts[CHART].options.forEach(o => {
+    if(o.kind === "bool"){
+      const b = el("button", "vopt" + (OPTS[o.id] ? " on" : ""));
+      const row = el("div", "row");
+      const sw = el("div", "sw"); sw.appendChild(el("i"));
+      row.appendChild(sw); row.appendChild(el("span", "nm", o.label));
+      b.appendChild(row);
+      b.appendChild(el("div", "vnote", o.note));
+      b.onclick = () => { OPTS[o.id] = !OPTS[o.id]; renderPanel(); renderCode(); draw(); };
+      host.appendChild(b);
+    } else {
+      const wrap = el("div");
+      const row = el("div", "numrow");
+      row.appendChild(el("span", "nm", o.label));
+      const r = document.createElement("input");
+      r.type = "range"; r.min = o.min; r.max = o.max; r.step = o.step; r.value = OPTS[o.id];
+      const v = el("span", "v", String(OPTS[o.id]));
+      r.oninput = e => { OPTS[o.id] = +e.target.value; v.textContent = e.target.value;
+                         renderCode(); draw(); };
+      row.appendChild(r); row.appendChild(v);
+      wrap.appendChild(row);
+      wrap.appendChild(el("div", "vnote", o.note));
+      host.appendChild(wrap);
+    }
+  });
+  const nav = el("div", "rowbar"); nav.style.marginTop = "12px";
+  const reset = el("button", "btn", "Reset");
+  reset.onclick = () => { OPTS = defaults(CHART); PREV = ""; renderAll(); };
+  const allon = el("button", "btn", "All on");
+  allon.onclick = () => { VZ.charts[CHART].options.forEach(o => {
+      if(o.kind === "bool") OPTS[o.id] = true; }); renderPanel(); renderCode(); draw(); };
+  nav.appendChild(reset); nav.appendChild(allon);
+  host.appendChild(nav);
+}
+function renderCode(){
+  const src = buildCode(CHART, LIB, OPTS);
+  $("vcode").innerHTML = highlight(src, FIRST ? "" : PREV);
+  PREV = src; FIRST = false;
+  $("vsetup").textContent = VZ.setup.replace(/\n/g, "  ·  ");
+  const o = VZ.charts[CHART].options.find(x => OPTS[x.id] && x.kind === "bool");
+  const names = {mpl: "matplotlib", sns: "seaborn", plotly: "plotly"};
+  const tips = {
+    mpl: "<b>matplotlib</b> draws on an <code>ax</code> you made yourself. Verbose, and nothing " +
+         "happens that you did not ask for — which is why every other library sits on top of it.",
+    sns: "<b>seaborn</b> takes the whole DataFrame and column <i>names</i>, and does the grouping " +
+         "for you. It returns a matplotlib <code>ax</code>, so every matplotlib line still works " +
+         "on the result.",
+    plotly: "<b>plotly</b> builds an interactive figure — hover, zoom, click a legend entry to " +
+         "hide a series. One call, then <code>update_layout</code> / <code>update_traces</code> " +
+         "for everything else."};
+  const pv = LIB === "plotly"
+    ? "<br><br>Changed lines are highlighted. The preview above <b>is</b> plotly \u2014 the same " +
+      "library, driven from JavaScript instead of Python. Hover a point, drag to zoom, " +
+      "double-click to reset; that is what the Python above gives you in a notebook."
+    : "<br><br>Changed lines are highlighted. The preview above is drawn by plotly.js, so it will " +
+      "not match " + names[LIB] + " pixel for pixel \u2014 it is there to show what each option " +
+      "<i>does</i>.";
+  $("vtip").innerHTML = tips[LIB] + pv;
+}
+function renderAll(){ renderChips(); renderLibs(); renderPanel(); renderCode(); draw(); }
+
+
+
+let VZ_BUILT = false;
+function renderVZ(){
+  const stage = $("stage"); stage.innerHTML = "";
+  const head = el("div", "card");
+  head.appendChild(el("h2", null, "Chart code"));
+  head.innerHTML += '<p class="sub2">Seven charts, three libraries. Flip a switch and the picture ' +
+    'and the Python change together; changed lines are highlighted. Every snippet was executed ' +
+    'before this page was built.</p>';
+  const chips = el("div", "tabs"); chips.id = "vchips"; head.appendChild(chips);
+  const blurb = el("p", "sub2"); blurb.id = "vblurb"; head.appendChild(blurb);
+  stage.appendChild(head);
+
+  const grid = el("div", "vz");
+  const panel = el("div", "card"); panel.id = "vpanel";
+  grid.appendChild(panel);
+
+  const rightcol = el("div");
+  const plotcard = el("div", "card");
+  plotcard.appendChild(el("h3", null, "Preview"));
+  const plot = el("div", "plot"); plot.id = "plot"; plotcard.appendChild(plot);
+  rightcol.appendChild(plotcard);
+
+  const codecard = el("div", "card");
+  const bar = el("div", "rowbar");
+  const libs = el("div", "libs"); libs.id = "vlibs"; bar.appendChild(libs);
+  const copy = el("button", "btn", "Copy code");
+  copy.onclick = () => {
+    const text = VZ.setup + "\n\n" + buildCode(CHART, LIB, OPTS);
+    navigator.clipboard.writeText(text).then(() => {
+      copy.textContent = "Copied"; setTimeout(() => copy.textContent = "Copy code", 1200);
+    }).catch(() => { copy.textContent = "Select and copy"; });
+  };
+  bar.appendChild(copy);
+  codecard.appendChild(bar);
+  const setup = el("div", "count"); setup.id = "vsetup"; setup.style.marginBottom = "8px";
+  codecard.appendChild(setup);
+  const code = el("pre", "code"); code.id = "vcode"; codecard.appendChild(code);
+  const tip = el("div", "why"); tip.id = "vtip"; codecard.appendChild(tip);
+  rightcol.appendChild(codecard);
+  grid.appendChild(rightcol);
+  stage.appendChild(grid);
+
+  if(!VZ_BUILT){ OPTS = defaults(CHART); VZ_BUILT = true; }
+  PREV = ""; FIRST = true;
+  renderAll();
+}
+
+/* ═════════════════════════════ shell ════════════════════════════════════════ */
+const TABS = [["Data quality", renderDQ], ["Practice questions", renderQ],
+              ["Chart code", renderVZ]];
+let TAB = 0;
+function renderTabs(){
+  const host = $("tabs"); host.innerHTML = "";
+  TABS.forEach(([name, fn], i) => {
+    const b = el("button", "tab" + (TAB === i ? " on" : ""), name);
+    b.onclick = () => { TAB = i; renderTabs(); fn(); window.scrollTo({top: 0}); };
+    host.appendChild(b);
+  });
+}
+$("theme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme") ||
+    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  if(TAB === 2) draw();
+};
+renderTabs(); TABS[0][1]();
+window.__m = {D, go: i => { TAB = i; renderTabs(); TABS[i][1](); },
+  answerAll: () => { QS.forEach(q => { if(q.kind === "fill"){ TYPED[q.n] = q.answer;
+      PICKED[q.n] = q.accept.indexOf(norm(q.answer)) >= 0; } else PICKED[q.n] = q.correct; });
+      renderQ(); return QS.filter(isRight).length; },
+  setChart: (c, l) => { CHART = c; LIB = l; OPTS = defaults(c); PREV = ""; FIRST = true;
+      renderAll(); return buildCode(c, l, OPTS); },
+  dim: i => { DIM = i; renderDQ(); }, extra: k => { EXTRA = k; renderDQ(); }};
+</script>
+</body>
+</html>
+
+</body></html>
